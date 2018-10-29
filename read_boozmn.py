@@ -109,7 +109,7 @@ class boozer:
         plt.show()
             
 #bz = boozer('boozmn_qhgc.nc')
-bz = boozer('boozmn_qhs46_mn8.nc')
+#bz = boozer('boozmn_qhs46_mn8.nc')
 #bz.make_modb_contour(0.5,51,51)
-bz.make_dpsidt_contour(0.5, 81, 81)
+#bz.make_dpsidt_contour(0.5, 81, 81)
 
