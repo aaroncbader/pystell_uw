@@ -43,6 +43,20 @@ class vmec_data:
                 plt.show()
         return r,z
 
+    #Calculates the mirror term on a given flux surface by comparing
+    #the outboard midplane value at phi=0, and the outboard midplane value
+    #at the half period.  This is the ROSE definition
+    def mirror(self, fs=-1):
+        if fs < 0:
+            fs = self.ns-1
+        B1 = self.modb_at_point(fs, 0, 0)
+        B2 = self.modb_at_point(fs, 0, np.pi/self.nfp)
+        print B1, B2
+        return (B1 - B2)/(B1 + B2)
+
+    
+    #Calculate modb at a point.
+    #helper function for plotting modb on a field line
     def modb_at_point(self, fs, theta, phi):
         return sum(self.bmnc[fs,:]*np.cos(self.xmnyq*theta - self.xnnyq*phi))
         
@@ -75,16 +89,7 @@ class vmec_data:
         if show:
             plt.show()
 
-    #Calculates the mirror term on a given flux surface by comparing
-    #the outboard midplane value at phi=0, and the outboard midplane value
-    #at the half period.  This is the ROSE definition
-    def mirror(self, fs=-1):
-        if fs < 0:
-            fs = self.ns-1
-        B1 = self.modb_at_point(fs, 0, 0)
-        B2 = self.modb_at_point(fs, 0, np.pi/self.nfp)
-        print B1, B2
-        return (B1 - B2)/(B1 + B2)
+    
 
 
     #Plot rotational transform as a function of s
