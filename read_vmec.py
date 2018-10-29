@@ -67,7 +67,6 @@ class vmec_data:
 
     
     #Calculate modb at a point.
-    #helper function for plotting modb on a field line
     def modb_at_point(self, fs, theta, phi):
         return sum(self.bmnc[fs,:]*np.cos(self.xmnyq*theta - self.xnnyq*phi))
         
@@ -100,33 +99,27 @@ class vmec_data:
         if show:
             plt.show()
 
-    def modb_on_surface(self, fs=-1, ntheta=64, nzeta=64, plot=True,
+    def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
                         show=False):
         #first attempt will use trisurface, let's see how it looks
-        r = np.zeros([nzeta,ntheta])
-        z = np.zeros([nzeta,ntheta])
-        x = np.zeros([nzeta,ntheta])
-        y = np.zeros([nzeta,ntheta])
-        b = np.zeros([nzeta,ntheta])
+        r = np.zeros([nphi,ntheta])
+        z = np.zeros([nphi,ntheta])
+        x = np.zeros([nphi,ntheta])
+        y = np.zeros([nphi,ntheta])
+        b = np.zeros([nphi,ntheta])
         
 
         theta = np.linspace(0,2*np.pi,num=ntheta)
-        zeta = np.linspace(0,2*np.pi/self.nfp, num=nzeta)
-        for zi in xrange(nzeta):
-            ze = zeta[zi]
+        phi = np.linspace(0,2*np.pi/self.nfp, num=nphi)
+        for phii in xrange(nphi):
+            p = phi[phii]
             for ti in xrange(ntheta):
                 th = theta[ti]
-                for imn in xrange(self.nmn):
-                    angle = self.xm[imn]*th - self.xn[imn]*ze
-                    
-                    r[zi,ti] += self.rmnc[fs,imn]*np.cos(angle)
-                    z[zi,ti] += self.zmns[fs,imn]*np.sin(angle)
-                    x[zi,ti] += r[zi,ti]*np.cos(ze)
-                    y[zi,ti] += r[zi,ti]*np.sin(ze)
-                for imn in xrange(self.nmnnyq):
-                    angle = self.xmnyq[imn]*th - self.xnnyq[imn]*ze
-                    b[zi,ti] += self.bmnc[fs,imn]*np.cos(angle)
-        
+                r[phii,ti] = self.r_at_point(fs,th,p)
+                z[phii,ti] = self.z_at_point(fs,th,p)
+                x[phii,ti] += r[phii,ti]*np.cos(p)
+                y[phii,ti] += r[phii,ti]*np.sin(p)
+                b[phii,ti] = self.modb_at_point(fs, th, p)
         if plot:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
@@ -143,4 +136,10 @@ class vmec_data:
         plt.plot(s, self.iota[1:])
         if show:
             plt.show()
+
     
+    def r_at_point(self, fs, theta, phi):
+        return sum(self.rmnc[fs,:]*np.cos(self.xm*theta - self.xn*phi))
+    
+    def z_at_point(self, fs, theta, phi):
+        return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))   
