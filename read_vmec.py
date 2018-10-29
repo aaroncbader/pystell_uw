@@ -21,13 +21,9 @@ class vmec_data:
         self.iota = np.array(self.data.variables['iotas'])
 
 
-    def plot_iota(self, show=False):
-        s = self.psi[1:]/self.psi[-1]
-        plt.plot(s, self.iota[1:])
-        if show:
-            plt.show()
+   
         
-    # plot 
+    # plot a flux surface with flux surface index fs. 
     def fsplot(self, phi=0, fs=-1, ntheta = 50, plot=True, show=False):
         theta = np.linspace(0,2*np.pi,num=ntheta+1)
        
@@ -51,7 +47,8 @@ class vmec_data:
         return sum(self.bmnc[fs,:]*np.cos(self.xmnyq*theta - self.xnnyq*phi))
         
             
-
+    #Plot modb on a field line starting at the outboard midplane for flux
+    #surface index fs
     def modb_on_fieldline(self, fs, show=False):
         
         phimax = 4*np.pi
@@ -77,7 +74,10 @@ class vmec_data:
         plt.plot(phi, modB)
         if show:
             plt.show()
-        
+
+    #Calculates the mirror term on a given flux surface by comparing
+    #the outboard midplane value at phi=0, and the outboard midplane value
+    #at the half period.  This is the ROSE definition
     def mirror(self, fs=-1):
         if fs < 0:
             fs = self.ns-1
@@ -85,3 +85,12 @@ class vmec_data:
         B2 = self.modb_at_point(fs, 0, np.pi/self.nfp)
         print B1, B2
         return (B1 - B2)/(B1 + B2)
+
+
+    #Plot rotational transform as a function of s
+    def plot_iota(self, show=False):
+        s = self.psi[1:]/self.psi[-1]
+        plt.plot(s, self.iota[1:])
+        if show:
+            plt.show()
+    
