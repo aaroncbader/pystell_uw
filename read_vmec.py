@@ -99,18 +99,25 @@ class vmec_data:
         if show:
             plt.show()
 
+    #This works, but there is an issue with plot display at high
+    #resolution.  I have not figured out how to fix it yet
     def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
-                        show=False):
+                        show=False, outxyz=None, full=False):
         #first attempt will use trisurface, let's see how it looks
         r = np.zeros([nphi,ntheta])
         z = np.zeros([nphi,ntheta])
         x = np.zeros([nphi,ntheta])
         y = np.zeros([nphi,ntheta])
         b = np.zeros([nphi,ntheta])
-        
+
+        if full:
+            divval = 1
+        else:
+            divval = self.nfp
 
         theta = np.linspace(0,2*np.pi,num=ntheta)
-        phi = np.linspace(0,2*np.pi/self.nfp, num=nphi)
+        phi = np.linspace(0,2*np.pi/divval, num=nphi)
+        
         for phii in xrange(nphi):
             p = phi[phii]
             for ti in xrange(ntheta):
@@ -126,9 +133,28 @@ class vmec_data:
             my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
             
             ax.plot_surface(x,y,z,facecolors=my_col,norm=True)
+            #set axus to equal
+            max_range = np.array([x.max()-x.min(), y.max()-y.min(),
+                                  z.max()-z.min()]).max() / 2.0
+
+            mid_x = (x.max()+x.min()) * 0.5
+            mid_y = (y.max()+y.min()) * 0.5
+            mid_z = (z.max()+z.min()) * 0.5
+            ax.set_xlim(mid_x - max_range, mid_x + max_range)
+            ax.set_ylim(mid_y - max_range, mid_y + max_range)
+            ax.set_zlim(mid_z - max_range, mid_z + max_range)
            
             if show:
                 plt.show()
+
+        if outxyz is not None:
+            wf = open(outxyz, 'w')
+            for phii in xrange(nphi):
+                for ti in xrange(ntheta):
+                    s = (str(x[phii,ti]) + '\t' + str(y[phii,ti]) + '\t'
+                         + str(z[phii,ti]) + '\n')
+                    wf.write(s)
+            
     
     #Plot rotational transform as a function of s
     def plot_iota(self, show=False):
