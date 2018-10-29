@@ -1,6 +1,8 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import fsolve
 
 
@@ -18,6 +20,8 @@ class vmec_data:
         self.nfp = np.array(self.data.variables['nfp'])
         self.psi = np.array(self.data.variables['phi'])
         self.ns = len(self.psi)
+        self.nmn = len(self.xm)
+        self.nmnnyq = len(self.xmnyq)
         self.iota = np.array(self.data.variables['iotas'])
 
 
@@ -89,9 +93,43 @@ class vmec_data:
         if show:
             plt.show()
 
+    def modb_on_surface(self, fs=-1, ntheta=64, nzeta=64, plot=True,
+                        show=False):
+        #first attempt will use trisurface, let's see how it looks
+        r = np.zeros([nzeta,ntheta])
+        z = np.zeros([nzeta,ntheta])
+        x = np.zeros([nzeta,ntheta])
+        y = np.zeros([nzeta,ntheta])
+        b = np.zeros([nzeta,ntheta])
+        
+
+        theta = np.linspace(0,2*np.pi,num=ntheta)
+        zeta = np.linspace(0,2*np.pi/self.nfp, num=nzeta)
+        for zi in xrange(nzeta):
+            ze = zeta[zi]
+            for ti in xrange(ntheta):
+                th = theta[ti]
+                for imn in xrange(self.nmn):
+                    angle = self.xm[imn]*th - self.xn[imn]*ze
+                    
+                    r[zi,ti] += self.rmnc[fs,imn]*np.cos(angle)
+                    z[zi,ti] += self.zmns[fs,imn]*np.sin(angle)
+                    x[zi,ti] += r[zi,ti]*np.cos(ze)
+                    y[zi,ti] += r[zi,ti]*np.sin(ze)
+                for imn in xrange(self.nmnnyq):
+                    angle = self.xmnyq[imn]*th - self.xnnyq[imn]*ze
+                    b[zi,ti] += self.bmnc[fs,imn]*np.cos(angle)
+        
+        if plot:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
+            
+            ax.plot_surface(x,y,z,facecolors=my_col,norm=True)
+           
+            if show:
+                plt.show()
     
-
-
     #Plot rotational transform as a function of s
     def plot_iota(self, show=False):
         s = self.psi[1:]/self.psi[-1]
