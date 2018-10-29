@@ -1,3 +1,10 @@
+#Author: Aaron Bader, UW-Madison 2018
+#
+#This class will open and read a boozmn file created by the 
+#fortran code xbooz_xform.
+#
+#It can also plot various quantities of interest
+
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt

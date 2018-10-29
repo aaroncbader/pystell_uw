@@ -1,3 +1,10 @@
+#Author: Aaron Bader, UW-Madison 2018
+#This is a file to read from a VMEC wout file and
+#plot various quantities of interest
+#
+#It is designed to be versatile allowing to either plot, plot and show, 
+#or export data. 
+
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
