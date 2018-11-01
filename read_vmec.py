@@ -157,11 +157,13 @@ class vmec_data:
             
     
     #Plot rotational transform as a function of s
-    def plot_iota(self, show=False):
+    def plot_iota(self, plot=True, show=False):
         s = self.psi[1:]/self.psi[-1]
-        plt.plot(s, self.iota[1:])
-        if show:
-            plt.show()
+        if plot:
+            plt.plot(s, self.iota[1:])
+            if show:
+                plt.show()
+        return s,self.iota[1:]
 
     
     def r_at_point(self, fs, theta, phi):
