@@ -73,10 +73,9 @@ class vmec_data:
             
     #Plot modb on a field line starting at the outboard midplane for flux
     #surface index fs
-    def modb_on_fieldline(self, fs, show=False):
+    def modb_on_fieldline(self, fs, phimax=4*np.pi, npoints=1001,
+                          plot=True, show=False):
         
-        phimax = 4*np.pi
-        npoints = 1001
         iota = self.iota[fs]
         phi = np.linspace(0,phimax,npoints)
         thetastar = phi*iota
@@ -95,9 +94,11 @@ class vmec_data:
             modB[i] = sum(self.bmnc[fs,:]*np.cos(
                 self.xmnyq*theta[i] - self.xnnyq*phi[i]))            
             
-        plt.plot(phi, modB)
-        if show:
-            plt.show()
+        if plot:
+            plt.plot(phi, modB)
+            if show:
+                plt.show()
+        return phi,modB
 
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
