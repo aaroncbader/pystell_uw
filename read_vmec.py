@@ -32,8 +32,20 @@ class vmec_data:
         self.iota = np.array(self.data.variables['iotas'])
 
 
-   
-        
+    #Compute the minor radius by evaluating the outboard and inboard R values
+    def bean_radius_horizontal(self):
+        Rout = 0.0
+        Rin = 0.0
+
+        for i in xrange(len(self.xm)):
+             Rout += self.rmnc[-1,i]
+             if self.xm[i] % 2 == 1:
+                 Rin -= self.rmnc[-1,i]
+             else:
+                 Rin += self.rmnc[-1,i]
+        return (Rout - Rin)/2       
+
+ 
     # plot a flux surface with flux surface index fs. 
     def fsplot(self, phi=0, fs=-1, ntheta = 50, plot=True, show=False):
         theta = np.linspace(0,2*np.pi,num=ntheta+1)
