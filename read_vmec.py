@@ -8,9 +8,17 @@
 from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
+import imp
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import fsolve
+
+try:
+    imp.find_module('mayavi')
+    use_mayavi = True
+    import mayavi
+except ImportError:
+    use_mayavi = False
 
 
 class vmec_data:
@@ -140,13 +148,13 @@ class vmec_data:
                 x[phii,ti] += r[phii,ti]*np.cos(p)
                 y[phii,ti] += r[phii,ti]*np.sin(p)
                 b[phii,ti] = self.modb_at_point(fs, th, p)
-        if plot:
+        if plot and not use_mayavi:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
             
             ax.plot_surface(x,y,z,facecolors=my_col,norm=True)
-            #set axus to equal
+            #set axis to equal
             max_range = np.array([x.max()-x.min(), y.max()-y.min(),
                                   z.max()-z.min()]).max() / 2.0
 
@@ -159,6 +167,9 @@ class vmec_data:
            
             if show:
                 plt.show()
+
+        if plot and use_mayavi:
+            print 'mayavi plotting goes here'
 
         if outxyz is not None:
             wf = open(outxyz, 'w')
