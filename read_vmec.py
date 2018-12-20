@@ -36,6 +36,7 @@ class vmec_data:
         self.nfp = np.array(self.data.variables['nfp'])
         self.psi = np.array(self.data.variables['phi'])
         self.volume = np.array(self.data.variables['volume_p'])
+        self.b0 = np.array(self.data.variables['b0'])
         self.ns = len(self.psi)
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
