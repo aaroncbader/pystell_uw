@@ -41,7 +41,7 @@ class vmec_data:
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
         self.iota = np.array(self.data.variables['iotas'])
-
+        self.pres = np.array(self.data.variables['pres'])
 
     #Compute the minor radius by evaluating the outboard and inboard R values
     def bean_radius_horizontal(self):
@@ -174,7 +174,8 @@ class vmec_data:
 
         if plot and use_mayavi:
             mlab.mesh(x,y,z, scalars=b)
-            mlab.show()
+            if show:
+                mlab.show()
 
         if outxyz is not None:
             wf = open(outxyz, 'w')
@@ -183,6 +184,7 @@ class vmec_data:
                     s = (str(x[phii,ti]) + '\t' + str(y[phii,ti]) + '\t'
                          + str(z[phii,ti]) + '\n')
                     wf.write(s)
+        #return [x, y, z, b]
             
     
     #Plot rotational transform as a function of s
@@ -194,6 +196,15 @@ class vmec_data:
                 plt.show()
         return s,self.iota[1:]
 
+
+    def pressure(self, plot=True, show=False):
+        s = self.psi[1:]/self.psi[-1]
+        pres = self.pres[1:]
+        if plot:
+            plt.plot(s, pres)
+            if show:
+                plt.show()
+        return s,pres
     
     def r_at_point(self, fs, theta, phi):
         return sum(self.rmnc[fs,:]*np.cos(self.xm*theta - self.xn*phi))
