@@ -11,11 +11,12 @@ import matplotlib.pyplot as plt
 import scipy.interpolate as interp
 
 
-
 class boozer:
     def __init__(self, fname):
         self.data = Dataset(fname)
         self.bmnc = np.array(self.data.variables['bmnc_b'][:])
+        self.rmnc = np.array(self.data.variables['rmnc_b'][:])
+        self.zmns = np.array(self.data.variables['zmns_b'][:])
         self.xm =  np.array(self.data.variables['ixm_b'][:])
         self.xn =  np.array(self.data.variables['ixn_b'][:])
         self.phi = np.array(self.data.variables['phi_b'][:])
@@ -26,34 +27,78 @@ class boozer:
         self.nrbooz =  len(self.bmnc) 
         self.nr = len(self.phi)
         self.sr = self.s[self.nr-self.nrbooz:]
+        #sr is on the half grid
+        self.sr = self.sr - self.sr[0]/2
         self.mnmodes = len(self.xm)
-        self.interp_at = -1
+        self.interpb_at = -1
+        self.binterp = np.empty(self.mnmodes)
+        self.interpr_at = -1
+        self.rinterp = np.empty(self.mnmodes)
+        self.interpz_at = -1
+        self.zinterp = np.empty(self.mnmodes)
         self.charge = 1.602E-19
 
-    def interp_bmn(self, s):
-        self.binterp = np.empty(self.mnmodes)
-        self.dbdpsi = np.empty(self.mnmodes)
+    #convert a boozer s, theta, zeta to r,z,phi
+    def booz2rzp(self, s, theta, zeta):
+        #get the r value
+        r = self.field_at_point(s, theta, zeta, fourier='r')
+        #get the z value
+        z = self.field_at_point(s, theta, zeta, fourier='z')
+        #theta doesn't change
+        return r, z, zeta
+
+    def booz2xyz(self, s, theta, zeta):
+        r,z,zeta = self.booz2rzp(s, theta, zeta)
+        x = r*np.cos(zeta)
+        y = r*np.sin(zeta)
+        return x,y,z
+
+    
+        
+    def interp_bmn(self, s, fourier='b'):
+        
+        
+        #self.dbdpsi = np.empty(self.mnmodes)
         for i in xrange(self.mnmodes):
-            bspl = interp.UnivariateSpline(self.sr, self.bmnc[:,i])
-            #self.binterp[i] = interp.griddata(self.sr,self.bmnc[:,i],
-            #                                  s,method='cubic')
-            self.binterp[i] = bspl(s)
-            #print bspl.derivatives(s)
-            #self.dbdpsi[i] = bspl.derivatives(s)
-        self.interp_at = s
+            if fourier=='b':
+                bspl = interp.UnivariateSpline(self.sr, self.bmnc[:,i])
+                self.interpb_at = s
+                self.binterp[i] = bspl(s)
+            elif fourier=='r':
+                bspl = interp.UnivariateSpline(self.sr, self.rmnc[:,i])
+                self.interpr_at = s
+                self.rinterp[i] = bspl(s)
+            elif fourier=='z':
+                bspl = interp.UnivariateSpline(self.sr, self.zmns[:,i])
+                self.interpz_at = s
+                self.zinterp[i] = bspl(s)
+            else:
+                print 'wrong value passed to interp_bmn'
+
+
             
-            
-    def field_at_point(self, s,theta,zeta):
+    # calculate the b,r or z value at a given point, default is b
+    def field_at_point(self, s,theta,zeta,fourier='b'):
         #make sure we've interpolated at the desired value
-        if self.interp_at != s:
-            self.interp_bmn(s)
-        b = 0
+        if fourier=='b' and self.interpb_at != s:
+            self.interp_bmn(s, fourier='b')
+        elif fourier =='r' and self.interpr_at != s:
+            self.interp_bmn(s, fourier='r')
+        elif fourier =='z' and self.interpz_at != s:
+            self.interp_bmn(s, fourier='z')
+            
+        v = 0
         for i in xrange(self.mnmodes):
-            if self.xn[i] > 5 or self.xm[i] > 5:
-                continue
+            #if self.xn[i] > 5 or self.xm[i] > 5:
+            #    continue
             angle = self.xm[i]*theta - self.xn[i]*zeta
-            b += self.binterp[i] * np.cos(angle)
-        return b
+            if fourier == 'b':
+                v += self.binterp[i] * np.cos(angle)
+            elif fourier == 'r':
+                v += self.rinterp[i] * np.cos(angle)
+            elif fourier == 'z':
+                v += self.zinterp[i] * np.sin(angle)
+        return v
 
     def currents_and_derivs(self, s):
         ipspl = interp.UnivariateSpline(self.s, self.Ip)
@@ -89,19 +134,20 @@ class boozer:
         #gamma = self.charge*(
         return b[2]
 
-    def make_modb_contour(self, s, ntheta, nzeta):
+    def make_modb_contour(self, s, ntheta, nzeta, plot = True):
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         b = np.empty([ntheta,nzeta])
         for i in xrange(nzeta):           
             for j in xrange(ntheta):
                 b[j,i] = self.field_at_point(s, theta[j], zeta[i])
-            print zeta[i], theta[j], b[j,i]    
+            #print zeta[i], theta[j], b[j,i]    
                 
-
-        plt.contour(zeta, theta, b, 20)
-        plt.colorbar()
-        plt.show()
+        if plot:
+            plt.contour(zeta, theta, b, 60)
+            plt.colorbar()
+            plt.show()
+        return [theta, zeta, b]
 
     def make_dpsidt_contour(self, s, ntheta, nzeta):
         theta = np.linspace(0,2*np.pi,ntheta)
