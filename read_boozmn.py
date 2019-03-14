@@ -148,19 +148,17 @@ class boozer:
         elif fourier =='p' and self.interpp_at != s:
             self.interp_bmn(s, fourier='p')
             
-        v = 0
-        for i in xrange(self.mnmodes):
-            #if self.xn[i] > 5 or self.xm[i] > 5:
-            #    continue
-            angle = self.xm[i]*theta - self.xn[i]*zeta
-            if fourier == 'b':
-                v += self.binterp[i] * np.cos(angle)
-            elif fourier == 'r':
-                v += self.rinterp[i] * np.cos(angle)
-            elif fourier == 'z':
-                v += self.zinterp[i] * np.sin(angle)
-            elif fourier == 'p':
-                v += self.pinterp[i] * np.sin(angle)
+        
+        angle = self.xm*theta - self.xn*zeta
+        if fourier == 'b':
+            v = sum(self.binterp*np.cos(angle))
+        elif fourier == 'r':
+            v = sum(self.rinterp*np.cos(angle))
+        elif fourier == 'z':
+            v = sum(self.zinterp*np.sin(angle))
+        elif fourier == 'p':
+            v = sum(self.pinterp*np.sin(angle))
+        
         return v
 
     def currents_and_derivs(self, s):
