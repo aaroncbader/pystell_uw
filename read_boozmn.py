@@ -44,12 +44,6 @@ class boozer:
 
     #convert a boozer s, theta, zeta to r,z,phi
     def booz2rzp(self, s, theta, zeta):
-        #make sure s is a valid value
-        s = max(0.0,s)
-        s = min(1.0,s)
-        # make sure theta and zeta are between 0 and 2*pi
-        #theta %= 2*np.pi
-        #zeta %= 2*np.pi
         
         #get the r value
         r = self.field_at_point(s, theta, zeta, fourier='r')
@@ -68,6 +62,7 @@ class boozer:
 
     #convert x,y,z coordinates to boozer coordinates
     def xyz2booz(self, x, y, z):
+        
         #convert to polar
         #r = np.sqrt(x**2 + y**2)
         phi = np.arctan2(y,x)
@@ -101,6 +96,15 @@ class boozer:
 
         sol = minimize(solve_function, booz_vec, method='L-BFGS-B',tol = 1.E-8,
                        bounds=bounds)
+
+        s = sol.x[0]
+        mins = 1.0/(self.nr*3)
+        maxs = 1.0-mins
+        if s < mins:
+            print "warning: s value of ",s," is too low, answer may be incorrect"
+        if s > maxs:
+            print "warning: s value of ",s," is too high, answer may be incorrect"
+
         return sol.x
                             
     
