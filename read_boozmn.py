@@ -9,6 +9,7 @@ from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as interp
+from scipy.optimize import minimize
 
 
 class boozer:
@@ -17,6 +18,7 @@ class boozer:
         self.bmnc = np.array(self.data.variables['bmnc_b'][:])
         self.rmnc = np.array(self.data.variables['rmnc_b'][:])
         self.zmns = np.array(self.data.variables['zmns_b'][:])
+        self.pmns = np.array(self.data.variables['pmns_b'][:])
         self.xm =  np.array(self.data.variables['ixm_b'][:])
         self.xn =  np.array(self.data.variables['ixn_b'][:])
         self.phi = np.array(self.data.variables['phi_b'][:])
@@ -36,24 +38,73 @@ class boozer:
         self.rinterp = np.empty(self.mnmodes)
         self.interpz_at = -1
         self.zinterp = np.empty(self.mnmodes)
+        self.interpp_at = -1
+        self.pinterp = np.empty(self.mnmodes)
         self.charge = 1.602E-19
 
     #convert a boozer s, theta, zeta to r,z,phi
     def booz2rzp(self, s, theta, zeta):
+        #make sure s is a valid value
+        s = max(0.0,s)
+        s = min(1.0,s)
+        # make sure theta and zeta are between 0 and 2*pi
+        #theta %= 2*np.pi
+        #zeta %= 2*np.pi
+        
         #get the r value
         r = self.field_at_point(s, theta, zeta, fourier='r')
         #get the z value
         z = self.field_at_point(s, theta, zeta, fourier='z')
-        #theta doesn't change
-        return r, z, zeta
+        #
+        #phi = self.field_at_point(s, theta, zeta, fourier='p')
+        phi = zeta
+        return r, z, phi
 
     def booz2xyz(self, s, theta, zeta):
-        r,z,zeta = self.booz2rzp(s, theta, zeta)
-        x = r*np.cos(zeta)
-        y = r*np.sin(zeta)
+        r,z,phi = self.booz2rzp(s, theta, zeta)
+        x = r*np.cos(phi)
+        y = r*np.sin(phi)
         return x,y,z
 
+    #convert x,y,z coordinates to boozer coordinates
+    def xyz2booz(self, x, y, z):
+        #convert to polar
+        #r = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y,x)
+        r = np.sqrt(x**2 + y**2)
+
+        #set up the booz vector guess
+        booz_vec = np.empty(3)
+
+        #get guesses for theta and s
+        thguess = self.thetaguess(r, z, phi)
+        booz_vec[0] = self.sguess(r, z, phi, thguess)
+        booz_vec[1] = thguess
+        booz_vec[2] = phi
+
+        #this function takes a numpy array booz_coords
+        #and returns a float representing the difference
+        def solve_function(booz_coords):
+            
+            booz_coords[0] = abs(booz_coords[0])
+            xg, yg, zg = self.booz2xyz(booz_coords[0], booz_coords[1],
+                                       booz_coords[2])
+            ans = 0
+            ans += (x-xg)**2
+            ans += (y-yg)**2
+            ans += (z-zg)**2
+            return np.sqrt(ans)
+        
+        # set bounds for s, theta and zeta
+        bounds = ((0.0,1.0),(booz_vec[1]-np.pi/2,booz_vec[1]+np.pi/2),
+                  (booz_vec[2]-np.pi/2,booz_vec[2]+np.pi/2))
+
+        sol = minimize(solve_function, booz_vec, method='L-BFGS-B',tol = 1.E-8,
+                       bounds=bounds)
+        return sol.x
+                            
     
+        
         
     def interp_bmn(self, s, fourier='b'):
         
@@ -72,6 +123,10 @@ class boozer:
                 bspl = interp.UnivariateSpline(self.sr, self.zmns[:,i])
                 self.interpz_at = s
                 self.zinterp[i] = bspl(s)
+            elif fourier=='p':
+                bspl = interp.UnivariateSpline(self.sr, self.pmns[:,i])
+                self.interpp_at = s
+                self.pinterp[i] = bspl(s)
             else:
                 print 'wrong value passed to interp_bmn'
 
@@ -86,6 +141,8 @@ class boozer:
             self.interp_bmn(s, fourier='r')
         elif fourier =='z' and self.interpz_at != s:
             self.interp_bmn(s, fourier='z')
+        elif fourier =='p' and self.interpp_at != s:
+            self.interp_bmn(s, fourier='p')
             
         v = 0
         for i in xrange(self.mnmodes):
@@ -98,6 +155,8 @@ class boozer:
                 v += self.rinterp[i] * np.cos(angle)
             elif fourier == 'z':
                 v += self.zinterp[i] * np.sin(angle)
+            elif fourier == 'p':
+                v += self.pinterp[i] * np.sin(angle)
         return v
 
     def currents_and_derivs(self, s):
@@ -160,6 +219,43 @@ class boozer:
         plt.contour(zeta, theta, psidot, 20)
         plt.colorbar()
         plt.show()
+
+
+    #guess for s given a point in r,z,phi and a guess for theta
+    def sguess(self, r, z, phi, theta, r0=None, z0=None):
+        #if axis is not around, get it
+        if r0 is None:
+            r0, z0, phi0 = self.booz2rzp(0,0,phi)
+
+        #get r and z at lcfs
+        r1, z1, phi1 = self.booz2rzp(1, theta, phi)
+
+        #squared distances for plasma minor radius and our point at theta
+        d_pl = (r1 - r0)**2 + (z1 - z0)**2
+        d_pt = (r - r0)**2 + (z - z0)**2
+
+        #s guess is normalized radius squared
+        return d_pt/d_pl
+
+    #Give a guess for theta by considering the axis and LCFS
+    #at zeta = phi
+    def thetaguess(self, r, z, phi):
+        r0, z0, phi0 = self.booz2rzp(0,0,phi)
+        r1, z1, phi1 = self.booz2rzp(1,0,phi)
+
+        #get relative r and z for plasma and our point
+        r_pl = r1 - r0
+        z_pl = z1 - z0
+
+        r_pt = r - r0
+        z_pt = z - z0
+
+        #get theta for plasma and our point
+        th_pl = np.arctan2(z_pl, r_pl)
+        th_pt = np.arctan2(z_pt, r_pt)
+
+        return th_pt - th_pl
+
             
 #bz = boozer('boozmn_qhgc.nc')
 #bz = boozer('boozmn_qhs46_mn8.nc')
