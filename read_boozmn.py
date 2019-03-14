@@ -151,13 +151,13 @@ class boozer:
         
         angle = self.xm*theta - self.xn*zeta
         if fourier == 'b':
-            v = sum(self.binterp*np.cos(angle))
+            v = np.sum(self.binterp*np.cos(angle))
         elif fourier == 'r':
-            v = sum(self.rinterp*np.cos(angle))
+            v = np.sum(self.rinterp*np.cos(angle))
         elif fourier == 'z':
-            v = sum(self.zinterp*np.sin(angle))
+            v = np.sum(self.zinterp*np.sin(angle))
         elif fourier == 'p':
-            v = sum(self.pinterp*np.sin(angle))
+            v = np.sum(self.pinterp*np.sin(angle))
         
         return v
 
