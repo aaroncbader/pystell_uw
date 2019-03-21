@@ -50,7 +50,7 @@ class boozer:
         #get the z value
         z = self.field_at_point(s, theta, zeta, fourier='z')
         #get the phi value
-        phi = zeta - self.field_at_point(s, theta, zeta, fourier='p')
+        phi = zeta + self.field_at_point(s, theta, zeta, fourier='p')
         return r, z, phi
 
     def booz2xyz(self, s, theta, zeta):
