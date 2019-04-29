@@ -34,6 +34,7 @@ class vmec_data:
         self.xmnyq = np.array(self.data.variables['xm_nyq'][:])
         self.xnnyq = np.array(self.data.variables['xn_nyq'][:])
         self.nfp = np.array(self.data.variables['nfp'])
+        self.a = np.array(self.data.variables['Aminor_p'])
         self.psi = np.array(self.data.variables['phi'])
         self.volume = np.array(self.data.variables['volume_p'])
         self.b0 = np.array(self.data.variables['b0'])
@@ -126,7 +127,7 @@ class vmec_data:
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
     def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
-                        show=False, outxyz=None, full=False):
+                        show=False, outxyz=None, full=False, mayavi=True):
         #first attempt will use trisurface, let's see how it looks
         r = np.zeros([nphi,ntheta])
         z = np.zeros([nphi,ntheta])
@@ -152,7 +153,7 @@ class vmec_data:
                 y[phii,ti] += r[phii,ti]*np.sin(p)
                 b[phii,ti] = self.modb_at_point(fs, th, p)
         my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))        
-        if plot and not use_mayavi:
+        if plot and (not use_mayavi or not mayavi):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             #my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
@@ -172,7 +173,7 @@ class vmec_data:
             if show:
                 plt.show()
 
-        if plot and use_mayavi:
+        elif plot and use_mayavi:
             mlab.mesh(x,y,z, scalars=b)
             if show:
                 mlab.show()
