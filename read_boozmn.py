@@ -1,6 +1,6 @@
 #Author: Aaron Bader, UW-Madison 2018
 #
-#This class will open and read a boozmn file created by the 
+#This class will open and read a boozmn file created by the
 #fortran code xbooz_xform.
 #
 #It can also plot various quantities of interest
@@ -23,7 +23,7 @@ class boozer:
         self.It = np.array(self.data.variables['bvco_b'])
         self.Ip = np.array(self.data.variables['buco_b'])
         self.s = self.phi/self.phi[-1]
-        self.nrbooz =  len(self.bmnc) 
+        self.nrbooz =  len(self.bmnc)
         self.nr = len(self.phi)
         self.sr = self.s[self.nr-self.nrbooz:]
         self.mnmodes = len(self.xm)
@@ -33,7 +33,7 @@ class boozer:
     def interp_bmn(self, s):
         self.binterp = np.empty(self.mnmodes)
         self.dbdpsi = np.empty(self.mnmodes)
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             bspl = interp.UnivariateSpline(self.sr, self.bmnc[:,i])
             #self.binterp[i] = interp.griddata(self.sr,self.bmnc[:,i],
             #                                  s,method='cubic')
@@ -41,14 +41,17 @@ class boozer:
             #print bspl.derivatives(s)
             #self.dbdpsi[i] = bspl.derivatives(s)
         self.interp_at = s
-            
-            
+
+
+
+
     def field_at_point(self, s,theta,zeta):
         #make sure we've interpolated at the desired value
-        if self.interp_at != s:
-            self.interp_bmn(s)
+        #if self.interp_at != s:
+        #    self.interp_bmn(s)
+        self.interp_bmn(s)
         b = 0
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             if self.xn[i] > 5 or self.xm[i] > 5:
                 continue
             angle = self.xm[i]*theta - self.xn[i]*zeta
@@ -71,7 +74,7 @@ class boozer:
         if self.interp_at != s:
             self.interp_bmn(s)
         b = np.zeros(4)
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             #if self.xn[i] > 5 or self.xm[i] > 5:
             #    continue
             angle = self.xm[i]*theta - self.xn[i]*zeta
@@ -93,11 +96,11 @@ class boozer:
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         b = np.empty([ntheta,nzeta])
-        for i in xrange(nzeta):           
-            for j in xrange(ntheta):
+        for i in range(nzeta):
+            for j in range(ntheta):
                 b[j,i] = self.field_at_point(s, theta[j], zeta[i])
-            print zeta[i], theta[j], b[j,i]    
-                
+            print(zeta[i], theta[j], b[j,i])
+
 
         plt.contour(zeta, theta, b, 20)
         plt.colorbar()
@@ -107,16 +110,10 @@ class boozer:
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         psidot = np.empty([ntheta,nzeta])
-        for i in xrange(nzeta):           
-            for j in xrange(ntheta):
+        for i in range(nzeta):
+            for j in range(ntheta):
                 psidot[j,i] = self.dpsidt(s,theta[j],zeta[i])
-            print zeta[i], theta[j], psidot[j,i]
+            print(zeta[i], theta[j], psidot[j,i])
         plt.contour(zeta, theta, psidot, 20)
         plt.colorbar()
         plt.show()
-            
-#bz = boozer('boozmn_qhgc.nc')
-#bz = boozer('boozmn_qhs46_mn8.nc')
-#bz.make_modb_contour(0.5,51,51)
-#bz.make_dpsidt_contour(0.5, 81, 81)
-

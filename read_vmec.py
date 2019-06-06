@@ -2,8 +2,8 @@
 #This is a file to read from a VMEC wout file and
 #plot various quantities of interest
 #
-#It is designed to be versatile allowing to either plot, plot and show, 
-#or export data. 
+#It is designed to be versatile allowing to either plot, plot and show,
+#or export data.
 
 from netCDF4 import Dataset
 import numpy as np
@@ -16,9 +16,10 @@ from scipy.optimize import fsolve
 try:
     imp.find_module('mayavi')
     use_mayavi = True
-    import mayavi
+    from mayavi import mlab
 except ImportError:
-    use_mayavi = False
+     use_mayavi = False
+#use_mayavi = False
 
 
 class vmec_data:
@@ -45,22 +46,22 @@ class vmec_data:
         Rout = 0.0
         Rin = 0.0
 
-        for i in xrange(len(self.xm)):
+        for i in range(len(self.xm)):
              Rout += self.rmnc[-1,i]
              if self.xm[i] % 2 == 1:
                  Rin -= self.rmnc[-1,i]
              else:
                  Rin += self.rmnc[-1,i]
-        return (Rout - Rin)/2       
+        return (Rout - Rin)/2
 
- 
-    # plot a flux surface with flux surface index fs. 
+
+    # plot a flux surface with flux surface index fs.
     def fsplot(self, phi=0, fs=-1, ntheta = 50, plot=True, show=False):
         theta = np.linspace(0,2*np.pi,num=ntheta+1)
-       
+
         r = np.zeros(ntheta+1)
         z = np.zeros(ntheta+1)
-        for i in xrange(len(self.xm)):
+        for i in range(len(self.xm)):
             m = self.xm[i]
             n = self.xn[i]
             angle = m*theta - n*phi
@@ -82,20 +83,20 @@ class vmec_data:
             fs = self.ns-1
         B1 = self.modb_at_point(fs, 0, 0)
         B2 = self.modb_at_point(fs, 0, np.pi/self.nfp)
-        print B1, B2
+        print (B1, B2)
         return (B1 - B2)/(B1 + B2)
 
-    
+
     #Calculate modb at a point.
     def modb_at_point(self, fs, theta, phi):
         return sum(self.bmnc[fs,:]*np.cos(self.xmnyq*theta - self.xnnyq*phi))
-        
-            
+
+
     #Plot modb on a field line starting at the outboard midplane for flux
     #surface index fs
     def modb_on_fieldline(self, fs, phimax=4*np.pi, npoints=1001,
                           plot=True, show=False):
-        
+
         iota = self.iota[fs]
         phi = np.linspace(0,phimax,npoints)
         thetastar = phi*iota
@@ -107,13 +108,13 @@ class vmec_data:
             lam = self.lmns[fs,:]
             lam1 = sum(lam*np.sin(self.xm*x - self.xn*phi[i]))
             return x + lam1 - thetastar[i]
-        
-        for i in xrange(npoints):
+
+        for i in range(npoints):
             theta[i] = fsolve(theta_solve, thetastar[i])
-            
+
             modB[i] = sum(self.bmnc[fs,:]*np.cos(
-                self.xmnyq*theta[i] - self.xnnyq*phi[i]))            
-            
+                self.xmnyq*theta[i] - self.xnnyq*phi[i]))
+
         if plot:
             plt.plot(phi, modB)
             if show:
@@ -122,7 +123,7 @@ class vmec_data:
 
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
-    def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
+    def modb_on_surface(self, fs=-1, ntheta=128,nphi=128, plot=True,
                         show=False, outxyz=None, full=False):
         #first attempt will use trisurface, let's see how it looks
         r = np.zeros([nphi,ntheta])
@@ -138,21 +139,22 @@ class vmec_data:
 
         theta = np.linspace(0,2*np.pi,num=ntheta)
         phi = np.linspace(0,2*np.pi/divval, num=nphi)
-        
-        for phii in xrange(nphi):
+
+        for phii in range(nphi):
             p = phi[phii]
-            for ti in xrange(ntheta):
+            for ti in range(ntheta):
                 th = theta[ti]
                 r[phii,ti] = self.r_at_point(fs,th,p)
                 z[phii,ti] = self.z_at_point(fs,th,p)
                 x[phii,ti] += r[phii,ti]*np.cos(p)
                 y[phii,ti] += r[phii,ti]*np.sin(p)
                 b[phii,ti] = self.modb_at_point(fs, th, p)
+
         if plot and not use_mayavi:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
-            
+
             ax.plot_surface(x,y,z,facecolors=my_col,norm=True)
             #set axis to equal
             max_range = np.array([x.max()-x.min(), y.max()-y.min(),
@@ -164,22 +166,33 @@ class vmec_data:
             ax.set_xlim(mid_x - max_range, mid_x + max_range)
             ax.set_ylim(mid_y - max_range, mid_y + max_range)
             ax.set_zlim(mid_z - max_range, mid_z + max_range)
-           
+
             if show:
                 plt.show()
 
         if plot and use_mayavi:
-            print 'mayavi plotting goes here'
+            #print('mayavi plotting goes here')
+            my_col = (b-np.min(b))/(np.max(b)-np.min(b))
+            fig = mlab.figure()
+            mlab.mesh(x,y,z,scalars=my_col)
+            mlab.axes()
+            #note the initial view is poor, but can be interactively adjusted
+            #if savefig is ever required, add a line to adjust view
+            #mlab.view(azimuth, elev, distance)
+            #  try    (180, 4, 10)
+            if show:
+                mlab.show()
+
 
         if outxyz is not None:
             wf = open(outxyz, 'w')
-            for phii in xrange(nphi):
-                for ti in xrange(ntheta):
+            for phii in range(nphi):
+                for ti in range(ntheta):
                     s = (str(x[phii,ti]) + '\t' + str(y[phii,ti]) + '\t'
                          + str(z[phii,ti]) + '\n')
                     wf.write(s)
-            
-    
+
+
     #Plot rotational transform as a function of s
     def plot_iota(self, plot=True, show=False):
         s = self.psi[1:]/self.psi[-1]
@@ -189,9 +202,9 @@ class vmec_data:
                 plt.show()
         return s,self.iota[1:]
 
-    
+
     def r_at_point(self, fs, theta, phi):
         return sum(self.rmnc[fs,:]*np.cos(self.xm*theta - self.xn*phi))
-    
+
     def z_at_point(self, fs, theta, phi):
-        return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))   
+        return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))
