@@ -17,6 +17,7 @@ try:
     imp.find_module('mayavi')
     use_mayavi = True
     from mayavi import mlab
+    import vtk
 except ImportError:
      use_mayavi = False
 #use_mayavi = False
@@ -34,12 +35,15 @@ class vmec_data:
         self.xmnyq = np.array(self.data.variables['xm_nyq'][:])
         self.xnnyq = np.array(self.data.variables['xn_nyq'][:])
         self.nfp = np.array(self.data.variables['nfp'])
+        self.a = np.array(self.data.variables['Aminor_p'])
         self.psi = np.array(self.data.variables['phi'])
+        self.volume = np.array(self.data.variables['volume_p'])
+        self.b0 = np.array(self.data.variables['b0'])
         self.ns = len(self.psi)
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
         self.iota = np.array(self.data.variables['iotas'])
-
+        self.pres = np.array(self.data.variables['pres'])
 
     #Compute the minor radius by evaluating the outboard and inboard R values
     def bean_radius_horizontal(self):
@@ -123,8 +127,8 @@ class vmec_data:
 
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
-    def modb_on_surface(self, fs=-1, ntheta=128,nphi=128, plot=True,
-                        show=False, outxyz=None, full=False):
+    def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
+                        show=False, outxyz=None, full=False, mayavi=True):
         #first attempt will use trisurface, let's see how it looks
         r = np.zeros([nphi,ntheta])
         z = np.zeros([nphi,ntheta])
@@ -149,11 +153,11 @@ class vmec_data:
                 x[phii,ti] += r[phii,ti]*np.cos(p)
                 y[phii,ti] += r[phii,ti]*np.sin(p)
                 b[phii,ti] = self.modb_at_point(fs, th, p)
-
-        if plot and not use_mayavi:
+        my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
+        if plot and (not use_mayavi or not mayavi):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
+            #my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
 
             ax.plot_surface(x,y,z,facecolors=my_col,norm=True)
             #set axis to equal
@@ -170,19 +174,10 @@ class vmec_data:
             if show:
                 plt.show()
 
-        if plot and use_mayavi:
-            #print('mayavi plotting goes here')
-            my_col = (b-np.min(b))/(np.max(b)-np.min(b))
-            fig = mlab.figure()
-            mlab.mesh(x,y,z,scalars=my_col)
-            mlab.axes()
-            #note the initial view is poor, but can be interactively adjusted
-            #if savefig is ever required, add a line to adjust view
-            #mlab.view(azimuth, elev, distance)
-            #  try    (180, 4, 10)
+        elif plot and use_mayavi:
+            mlab.mesh(x,y,z, scalars=b)
             if show:
                 mlab.show()
-
 
         if outxyz is not None:
             wf = open(outxyz, 'w')
@@ -191,6 +186,7 @@ class vmec_data:
                     s = (str(x[phii,ti]) + '\t' + str(y[phii,ti]) + '\t'
                          + str(z[phii,ti]) + '\n')
                     wf.write(s)
+        #return [x, y, z, b]
 
 
     #Plot rotational transform as a function of s
@@ -202,6 +198,15 @@ class vmec_data:
                 plt.show()
         return s,self.iota[1:]
 
+
+    def pressure(self, plot=True, show=False):
+        s = self.psi[1:]/self.psi[-1]
+        pres = self.pres[1:]
+        if plot:
+            plt.plot(s, pres)
+            if show:
+                plt.show()
+        return s,pres
 
     def r_at_point(self, fs, theta, phi):
         return sum(self.rmnc[fs,:]*np.cos(self.xm*theta - self.xn*phi))
