@@ -30,7 +30,7 @@ class boozer:
         self.nr = len(self.phi)
         self.sr = self.s[self.nr-self.nrbooz:]
         #sr is on the half grid
-        self.sr = self.sr - self.sr[0]/2
+        self.sr = self.sr - self.sr[0]/2 
         self.mnmodes = len(self.xm)
         self.interpb_at = -1
         self.binterp = np.empty(self.mnmodes)
@@ -256,6 +256,45 @@ class boozer:
         th_pt = np.arctan2(z_pt, r_pt)
 
         return th_pt - th_pl
+
+    # plot the largest boozer modes,
+    # fs is the surface to compare at
+    # n is the number of modes to plot
+    # rovera is whether to plot wrt r/a or s
+    # ignore0 is whether to ignore the B00 mode
+    def plot_largest_modes(self, fs=-1, n=10, rovera=True, ignore0=True,
+                           show=True):
+        # get sorting index for the desired slice
+        bslice = self.bmnc[fs,:]
+        bslice = -1*abs(bslice)
+        sortvals = np.argsort(bslice)
+
+        #decide whether to plot vs r over a, or s
+        if rovera:
+            xaxis = np.sqrt(self.sr)
+        else:
+            xaxis = self.sr
+
+        if ignore0:
+            startval = 1
+        else:
+            startval = 0
+
+
+        leg = [] #legend
+        
+        #now plot the 10 largest
+        for i in xrange(startval,n+startval):
+            plt.plot(xaxis, self.bmnc[:,sortvals[i]])
+            legs = ('n=' + str(self.xn[sortvals[i]]) +
+                    ', m=' + str(self.xm[sortvals[i]]))
+            leg.append(legs)
+        plt.legend(leg)
+        plt.xlabel('r/a')
+        plt.ylabel('B_mn')
+        if show:
+            plt.show()
+    
 
             
 #bz = boozer('boozmn_qhgc.nc')
