@@ -352,7 +352,7 @@ class boozer:
             xaxis = self.sr
 
         startval=1
-        qh_metric=np.zeros(len(self.bmnc[:,0]))
+        qh_metric_val=np.zeros(len(self.bmnc[:,0]))
         #now sum squared modes, ignoring non helically symmetric modes, iterating and storing over fs
         for fs in range(0,len(self.bmnc[:,0])):
             modesum=0
@@ -362,12 +362,12 @@ class boozer:
                         continue
                     else:
                         modesum += (self.bmnc[fs,sortvals[i]])**2
-            qh_metric[fs] = np.sqrt(modesum)/self.bmnc[fs,0]
+            qh_metric_val[fs] = np.sqrt(modesum)/self.bmnc[fs,0]
 
-        plt.plot(xaxis, qh_metric)
+        plt.plot(xaxis, qh_metric_val)
         plt.xlabel('r/a')
         plt.ylabel('$\\sqrt{\\Sigma_{m,n}\ B_{mn}^{2}}\ /\ B_{00}$')
         plt.title('Quasi-helicity metric')
         if show:
             plt.show()
-        return qh_metric
+        return qh_metric_val
