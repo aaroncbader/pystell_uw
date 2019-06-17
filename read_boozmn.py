@@ -172,9 +172,15 @@ class boozer:
         return ip,it
 
     # return b as (modb, dbdpsi, dbdtheta, dbdzeta)
-    def field_and_derivs(self, s,theta,zeta):
-        if self.interp_at != s:
-            self.interp_bmn(s)
+    def field_and_derivs(self, s,theta,zeta,fourier='b'):
+        if fourier=='b' and self.interpb_at != s:
+            self.interp_bmn(s, fourier='b')
+        elif fourier =='r' and self.interpr_at != s:
+            self.interp_bmn(s, fourier='r')
+        elif fourier =='z' and self.interpz_at != s:
+            self.interp_bmn(s, fourier='z')
+        elif fourier =='p' and self.interpp_at != s:
+            self.interp_bmn(s, fourier='p')
         b = np.zeros(4)
         for i in range(self.mnmodes):
             #if self.xn[i] > 5 or self.xm[i] > 5:
@@ -291,13 +297,36 @@ class boozer:
             leg.append(legs)
         plt.legend(leg)
         plt.xlabel('r/a')
-        plt.ylabel('B_mn')
+        plt.ylabel('$B_{mn}$')
+        plt.title('largest $B_{mn}$  for fs '+str(fs))
         if show:
             plt.show()
 
+    #sum absolute value of non quasi-helically symmetric modes
+    #for 4 period device to get a
+    #metric of how well helicity optimization selects for
+    #modes of ratio n/m = 4
+    def sum_nonsym_modes(self, fs=-1):
+        # get sorting index for the desired slice
+        bslice = self.bmnc[fs,:]
+        bslice = -1*abs(bslice)
+        sortvals = np.argsort(bslice)
 
+        #ignore 00 mode in the sum
+        ignore0=True
+        if ignore0:
+            startval = 1
+        else:
+            startval = 0
 
-#bz = boozer('boozmn_qhgc.nc')
-#bz = boozer('boozmn_qhs46_mn8.nc')
-#bz.make_modb_contour(0.5,51,51)
-#bz.make_dpsidt_contour(0.5, 81, 81)
+        modesum=0
+        #now sum squared modes, ignoring non helically symmetric modes
+        for i in range(startval,len(self.bmnc[0,:])-startval): #check this
+            with np.errstate(divide = 'ignore'):
+                if self.xn[sortvals[i]]/self.xm[sortvals[i]] == 4:
+                    continue
+                else:
+                    modesum += (self.bmnc[fs,sortvals[i]])**2
+        qh_metric = np.sqrt(modesum)/self.bmnc[fs,0]
+        #print('test')
+        return qh_metric
