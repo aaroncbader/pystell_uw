@@ -172,9 +172,15 @@ class boozer:
         return ip,it
 
     # return b as (modb, dbdpsi, dbdtheta, dbdzeta)
-    def field_and_derivs(self, s,theta,zeta):
-        if self.interp_at != s:
-            self.interp_bmn(s)
+    def field_and_derivs(self, s,theta,zeta,fourier='b'):
+        if fourier=='b' and self.interpb_at != s:
+            self.interp_bmn(s, fourier='b')
+        elif fourier =='r' and self.interpr_at != s:
+            self.interp_bmn(s, fourier='r')
+        elif fourier =='z' and self.interpz_at != s:
+            self.interp_bmn(s, fourier='z')
+        elif fourier =='p' and self.interpp_at != s:
+            self.interp_bmn(s, fourier='p')
         b = np.zeros(4)
         for i in range(self.mnmodes):
             #if self.xn[i] > 5 or self.xm[i] > 5:
@@ -291,13 +297,77 @@ class boozer:
             leg.append(legs)
         plt.legend(leg)
         plt.xlabel('r/a')
-        plt.ylabel('B_mn')
+        plt.ylabel('$B_{mn}$')
+        plt.title('largest $B_{mn}$  for fs '+str(fs))
         if show:
             plt.show()
 
 
+    # def qh_metric(self, fs=-1):
+    #     '''
+    #     This function sums squared non quasi-helically symmetric modes
+    #     for 4 period device to get a metric of how well helicity optimization
+    #     in STELLOPT selects for modes of ratio n/m = 4.
+    #
+    #     Function designed to match STELLOPT HELICITY metric output.
+    #
+    #     User input to decide at which flux surface to get metric.
+    #     '''
+    #     # get sorting index for the desired slice, in order to ignore 00 state
+    #     bslice = self.bmnc[fs,:]
+    #     bslice = -1*abs(bslice)
+    #     sortvals = np.argsort(bslice)
+    #
+    #     startval=1
+    #     modesum=0
+    #     #now sum squared modes, ignoring non helically symmetric modes
+    #     for i in range(startval,len(self.bmnc[0,:])-startval): #check this
+    #         with np.errstate(divide = 'ignore'):
+    #             if self.xn[sortvals[i]]/self.xm[sortvals[i]] == 4:
+    #                 continue
+    #             else:
+    #                 modesum += (self.bmnc[fs,sortvals[i]])**2
+    #     qh_metric = np.sqrt(modesum)/self.bmnc[fs,0]
+    #     return qh_metric
 
-#bz = boozer('boozmn_qhgc.nc')
-#bz = boozer('boozmn_qhs46_mn8.nc')
-#bz.make_modb_contour(0.5,51,51)
-#bz.make_dpsidt_contour(0.5, 81, 81)
+    def qh_metric(self, show=False, rovera=True,):
+        '''
+        This function sums squared non quasi-helically symmetric modes
+        for 4 period device to get a metric of how well helicity optimization
+        in STELLOPT selects for modes of ratio n/m = 4.
+
+        Function designed to match STELLOPT HELICITY metric output.
+
+        QH metric is plotted if show=True
+        '''
+        # get sorting index for the desired slice, in order to ignore 00 state
+        bslice = self.bmnc[-1,:]
+        bslice = -1*abs(bslice)
+        sortvals = np.argsort(bslice)
+
+        #decide whether to plot vs r over a, or s
+        if rovera:
+            xaxis = np.sqrt(self.sr)
+        else:
+            xaxis = self.sr
+
+        startval=1
+        qh_metric_val=np.zeros(len(self.bmnc[:,0]))
+        #now sum squared modes, ignoring non helically symmetric modes, iterating and storing over fs
+        for fs in range(0,len(self.bmnc[:,0])):
+            modesum=0
+            for i in range(startval,len(self.bmnc[0,:])-startval): #check this
+                with np.errstate(divide = 'ignore'):
+                    if self.xn[sortvals[i]]/self.xm[sortvals[i]] == 4:
+                        continue
+                    else:
+                        modesum += (self.bmnc[fs,sortvals[i]])**2
+            qh_metric_val[fs] = np.sqrt(modesum)/self.bmnc[fs,0]
+
+        plt.plot(xaxis, qh_metric_val)
+        plt.xlabel('r/a')
+        plt.ylabel('$\\sqrt{\\Sigma_{m,n}\ B_{mn}^{2}}\ /\ B_{00}$')
+        plt.title('Quasi-helicity metric')
+        if show:
+            plt.show()
+        return qh_metric_val
