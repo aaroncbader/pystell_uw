@@ -302,31 +302,72 @@ class boozer:
         if show:
             plt.show()
 
-    #sum absolute value of non quasi-helically symmetric modes
-    #for 4 period device to get a
-    #metric of how well helicity optimization selects for
-    #modes of ratio n/m = 4
-    def sum_nonsym_modes(self, fs=-1):
-        # get sorting index for the desired slice
-        bslice = self.bmnc[fs,:]
+
+    # def qh_metric(self, fs=-1):
+    #     '''
+    #     This function sums squared non quasi-helically symmetric modes
+    #     for 4 period device to get a metric of how well helicity optimization
+    #     in STELLOPT selects for modes of ratio n/m = 4.
+    #
+    #     Function designed to match STELLOPT HELICITY metric output.
+    #
+    #     User input to decide at which flux surface to get metric.
+    #     '''
+    #     # get sorting index for the desired slice, in order to ignore 00 state
+    #     bslice = self.bmnc[fs,:]
+    #     bslice = -1*abs(bslice)
+    #     sortvals = np.argsort(bslice)
+    #
+    #     startval=1
+    #     modesum=0
+    #     #now sum squared modes, ignoring non helically symmetric modes
+    #     for i in range(startval,len(self.bmnc[0,:])-startval): #check this
+    #         with np.errstate(divide = 'ignore'):
+    #             if self.xn[sortvals[i]]/self.xm[sortvals[i]] == 4:
+    #                 continue
+    #             else:
+    #                 modesum += (self.bmnc[fs,sortvals[i]])**2
+    #     qh_metric = np.sqrt(modesum)/self.bmnc[fs,0]
+    #     return qh_metric
+
+    def qh_metric(self, show=False, rovera=True,):
+        '''
+        This function sums squared non quasi-helically symmetric modes
+        for 4 period device to get a metric of how well helicity optimization
+        in STELLOPT selects for modes of ratio n/m = 4.
+
+        Function designed to match STELLOPT HELICITY metric output.
+
+        QH metric is plotted if show=True
+        '''
+        # get sorting index for the desired slice, in order to ignore 00 state
+        bslice = self.bmnc[-1,:]
         bslice = -1*abs(bslice)
         sortvals = np.argsort(bslice)
 
-        #ignore 00 mode in the sum
-        ignore0=True
-        if ignore0:
-            startval = 1
+        #decide whether to plot vs r over a, or s
+        if rovera:
+            xaxis = np.sqrt(self.sr)
         else:
-            startval = 0
+            xaxis = self.sr
 
-        modesum=0
-        #now sum squared modes, ignoring non helically symmetric modes
-        for i in range(startval,len(self.bmnc[0,:])-startval): #check this
-            with np.errstate(divide = 'ignore'):
-                if self.xn[sortvals[i]]/self.xm[sortvals[i]] == 4:
-                    continue
-                else:
-                    modesum += (self.bmnc[fs,sortvals[i]])**2
-        qh_metric = np.sqrt(modesum)/self.bmnc[fs,0]
-        #print('test')
+        startval=1
+        qh_metric=np.zeros(len(self.bmnc[:,0]))
+        #now sum squared modes, ignoring non helically symmetric modes, iterating and storing over fs
+        for fs in range(0,len(self.bmnc[:,0])):
+            modesum=0
+            for i in range(startval,len(self.bmnc[0,:])-startval): #check this
+                with np.errstate(divide = 'ignore'):
+                    if self.xn[sortvals[i]]/self.xm[sortvals[i]] == 4:
+                        continue
+                    else:
+                        modesum += (self.bmnc[fs,sortvals[i]])**2
+            qh_metric[fs] = np.sqrt(modesum)/self.bmnc[fs,0]
+
+        plt.plot(xaxis, qh_metric)
+        plt.xlabel('r/a')
+        plt.ylabel('$\\sqrt{\\Sigma_{m,n}\ B_{mn}^{2}}\ /\ B_{00}$')
+        plt.title('Quasi-helicity metric')
+        if show:
+            plt.show()
         return qh_metric
