@@ -33,6 +33,8 @@ class vmec_data:
         self.xn = np.array(self.data.variables['xn'][:])
         self.xmnyq = np.array(self.data.variables['xm_nyq'][:])
         self.xnnyq = np.array(self.data.variables['xn_nyq'][:])
+        self.raxis = np.array(self.data.variables['raxis_cc'][:])
+        self.zaxis = np.array(self.data.variables['zaxis_cs'][:])
         self.nfp = np.array(self.data.variables['nfp'])
         self.a = np.array(self.data.variables['Aminor_p'])
         self.psi = np.array(self.data.variables['phi'])
@@ -174,10 +176,11 @@ class vmec_data:
                 plt.show()
 
         elif plot and use_mayavi:
+            mlab.figure(bgcolor=(1.0, 1.0, 1.0), size=(800,600))
             mlab.mesh(x,y,z, scalars=b)
-            if show:
+            if show:                
                 mlab.show()
-
+                
         if outxyz is not None:
             wf = open(outxyz, 'w')
             for phii in xrange(nphi):
@@ -187,7 +190,15 @@ class vmec_data:
                     wf.write(s)
         #return [x, y, z, b]
             
-    
+
+    def axis(self, phi):
+        r = 0
+        z = 0
+        for i in xrange(len(self.raxis)):
+            r += self.raxis[i]*np.cos(i*self.nfp*phi)
+            z += self.zaxis[i]*np.sin(i*self.nfp*phi)
+        return r,z
+        
     #Plot rotational transform as a function of s
     def plot_iota(self, plot=True, show=False):
         s = self.psi[1:]/self.psi[-1]
