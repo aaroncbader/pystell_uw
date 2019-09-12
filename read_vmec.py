@@ -241,5 +241,10 @@ class vmec_data:
         return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))
 
 
-    #def dvds(self, s):
+    def dvds(self, s):
+        #round it 
+        fs = self.s2fs(s)
+
+        dvds_val = 4 * np.pi**2 * abs(self.gmnc[fs,0])
+        return dvds_val
         
