@@ -12,6 +12,7 @@ import imp
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import fsolve
+import scipy.integrate as integrate
 
 try:
     imp.find_module('mayavi')
@@ -29,6 +30,7 @@ class vmec_data:
         self.zmns = np.array(self.data.variables['zmns'][:])
         self.lmns = np.array(self.data.variables['lmns'][:])
         self.bmnc = np.array(self.data.variables['bmnc'][:])
+        self.gmnc = np.array(self.data.variables['gmnc'][:])
         self.xm = np.array(self.data.variables['xm'][:])
         self.xn = np.array(self.data.variables['xn'][:])
         self.xmnyq = np.array(self.data.variables['xm_nyq'][:])
@@ -46,6 +48,20 @@ class vmec_data:
         self.iota = np.array(self.data.variables['iotas'])
         self.pres = np.array(self.data.variables['pres'])
 
+
+    #convert a normalized flux value s to a flux surface index
+    def s2fs(self, s, isint=True):
+        fs = s*(self.ns-1)
+        if isint:
+            fs = int(round(fs))
+        return fs
+
+    #convert a flux surface index (integer or not) into a normalized flux s
+    def fs2s(self, fs):
+        s = float(fs)/(self.ns-1)
+        return s
+    
+    
     #Compute the minor radius by evaluating the outboard and inboard R values
     def bean_radius_horizontal(self):
         Rout = 0.0
@@ -222,4 +238,8 @@ class vmec_data:
         return sum(self.rmnc[fs,:]*np.cos(self.xm*theta - self.xn*phi))
     
     def z_at_point(self, fs, theta, phi):
-        return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))   
+        return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))
+
+
+    #def dvds(self, s):
+        
