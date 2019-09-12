@@ -13,6 +13,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import fsolve
 import scipy.integrate as integrate
+import scipy.interpolate as interpolate
 
 try:
     imp.find_module('mayavi')
@@ -40,6 +41,7 @@ class vmec_data:
         self.nfp = np.array(self.data.variables['nfp'])
         self.a = np.array(self.data.variables['Aminor_p'])
         self.psi = np.array(self.data.variables['phi'])
+        self.s = self.psi/self.psi[-1]
         self.volume = np.array(self.data.variables['volume_p'])
         self.b0 = np.array(self.data.variables['b0'])
         self.ns = len(self.psi)
@@ -241,10 +243,17 @@ class vmec_data:
         return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))
 
 
-    def dvds(self, s):
-        #round it 
-        fs = self.s2fs(s)
+    # return dvds, the volume derivative, which is 4 pi^2 abs(g_00). 
+    def dvds(self, s, interp=False):        
 
-        dvds_val = 4 * np.pi**2 * abs(self.gmnc[fs,0])
+        if not interp:
+            # if we don't want to interpolate, then get an actual value
+            fs = self.s2fs(s)
+            g = self.gmnc[fs,0]
+        else:
+            gfunc = interpolate.interp1d(self.s,self.gmnc[:,0])
+            g = gfunc(s)
+            
+        dvds_val = abs(4 * np.pi**2 * g)
         return dvds_val
         
