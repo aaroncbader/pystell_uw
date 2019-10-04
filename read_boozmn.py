@@ -263,7 +263,7 @@ class boozer:
     # rovera is whether to plot wrt r/a or s
     # ignore0 is whether to ignore the B00 mode
     def plot_largest_modes(self, fs=-1, n=10, rovera=True, ignore0=True,
-                           show=True):
+                           show=True, ax=None):
         # get sorting index for the desired slice
         bslice = self.bmnc[fs,:]
         bslice = -1*abs(bslice)
@@ -284,14 +284,25 @@ class boozer:
         leg = [] #legend
         
         #now plot the 10 largest
-        for i in xrange(startval,n+startval):
-            plt.plot(xaxis, self.bmnc[:,sortvals[i]])
-            legs = ('n=' + str(self.xn[sortvals[i]]) +
-                    ', m=' + str(self.xm[sortvals[i]]))
-            leg.append(legs)
-        plt.legend(leg)
-        plt.xlabel('r/a')
-        plt.ylabel('B_mn')
+        if ax is None:
+            for i in xrange(startval,n+startval):
+                plt.plot(xaxis, self.bmnc[:,sortvals[i]])
+                legs = ('n=' + str(self.xn[sortvals[i]]) +
+                        ', m=' + str(self.xm[sortvals[i]]))
+                leg.append(legs)
+            plt.legend(leg)
+            plt.xlabel('r/a')
+            plt.ylabel('B_mn')
+        else:
+            for i in xrange(startval,n+startval):
+                ax.plot(xaxis, self.bmnc[:,sortvals[i]])
+                legs = ('n=' + str(self.xn[sortvals[i]]) +
+                        ', m=' + str(self.xm[sortvals[i]]))
+                leg.append(legs)
+            ax.legend(leg)
+            ax.set_xlabel('$r/a$')
+            ax.set_ylabel('$B_{mn}$')
+                
         if show:
             plt.show()
     
