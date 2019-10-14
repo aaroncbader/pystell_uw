@@ -41,7 +41,8 @@ class vmec_data:
         self.nfp = np.array(self.data.variables['nfp'])
         self.a = np.array(self.data.variables['Aminor_p'])
         self.psi = np.array(self.data.variables['phi'])
-        self.s = self.psi/self.psi[-1]
+        self.s = self.psi/self.psi[-1] #integer grid
+        self.shalf = self.s - self.s[1]/2 #half grid
         self.volume = np.array(self.data.variables['volume_p'])
         self.b0 = np.array(self.data.variables['b0'])
         self.ns = len(self.psi)
@@ -172,7 +173,7 @@ class vmec_data:
                 x[phii,ti] += r[phii,ti]*np.cos(p)
                 y[phii,ti] += r[phii,ti]*np.sin(p)
                 b[phii,ti] = self.modb_at_point(fs, th, p)
-        my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))        
+        my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
         if plot and (not use_mayavi or not mayavi):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
@@ -190,13 +191,13 @@ class vmec_data:
             ax.set_ylim(mid_y - max_range, mid_y + max_range)
             ax.set_zlim(mid_z - max_range, mid_z + max_range)
            
-            if show:
+            if show:               
                 plt.show()
 
         elif plot and use_mayavi:
             mlab.figure(bgcolor=(1.0, 1.0, 1.0), size=(800,600))
             mlab.mesh(x,y,z, scalars=b)
-            if show:                
+            if show:
                 mlab.show()
                 
         if outxyz is not None:
@@ -245,14 +246,18 @@ class vmec_data:
 
     # return dvds, the volume derivative, which is 4 pi^2 abs(g_00). 
     def dvds(self, s, interp=False):        
-
         if not interp:
             # if we don't want to interpolate, then get an actual value
             fs = self.s2fs(s)
             g = self.gmnc[fs,0]
         else:
-            gfunc = interpolate.interp1d(self.s,self.gmnc[:,0])
-            g = gfunc(s)
+            if s < self.shalf[1]:
+                g = self.gmnc[1,0]
+            elif s > self.shalf[-1]:
+                g = self.gmnc[-1,0]
+            else:
+                gfunc = interpolate.interp1d(self.shalf,self.gmnc[:,0])
+                g = gfunc(s)
             
         dvds_val = abs(4 * np.pi**2 * g)
         return dvds_val
