@@ -291,8 +291,8 @@ class boozer:
                         ', m=' + str(self.xm[sortvals[i]]))
                 leg.append(legs)
             plt.legend(leg)
-            plt.xlabel('r/a')
-            plt.ylabel('B_mn')
+            plt.xlabel('$r/a$')
+            plt.ylabel('$B_{mn}$')
         else:
             for i in xrange(startval,n+startval):
                 ax.plot(xaxis, self.bmnc[:,sortvals[i]])
