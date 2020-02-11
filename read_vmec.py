@@ -118,12 +118,13 @@ class vmec_data:
             
     #Plot modb on a field line starting at the outboard midplane for flux
     #surface index fs
+    #Note this is approximate because we don't interpolate B, it's evaluated on the half grid not the full grid.  Can fix with some effort
     def modb_on_fieldline(self, fs, phimax=4*np.pi, npoints=1001,
-                          plot=True, show=False):
+                          phistart = 0, thoffset = 0, plot=True, show=False):
         
         iota = self.iota[fs]
-        phi = np.linspace(0,phimax,npoints)
-        thetastar = phi*iota
+        phi = np.linspace(phistart,phimax+phistart,npoints)
+        thetastar = phi*iota + thoffset
         theta = np.zeros(npoints)
         modB = np.zeros(npoints)
         rstart = sum(self.rmnc[fs,:])
@@ -143,12 +144,13 @@ class vmec_data:
             plt.plot(phi, modB)
             if show:
                 plt.show()
-        return phi,modB
+        return phi,modB,theta
 
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
     def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
-                        show=False, outxyz=None, full=False, mayavi=True):
+                        show=False, outxyz=None, full=False, alpha=1,
+                        mayavi=True):
         #first attempt will use trisurface, let's see how it looks
         r = np.zeros([nphi,ntheta])
         z = np.zeros([nphi,ntheta])
@@ -179,7 +181,7 @@ class vmec_data:
             ax = fig.add_subplot(111, projection='3d')
             #my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
             
-            ax.plot_surface(x,y,z,facecolors=my_col,norm=True)
+            ax.plot_surface(x,y,z,facecolors=my_col,norm=True, alpha=alpha)
             #set axis to equal
             max_range = np.array([x.max()-x.min(), y.max()-y.min(),
                                   z.max()-z.min()]).max() / 2.0
@@ -243,6 +245,17 @@ class vmec_data:
     def z_at_point(self, fs, theta, phi):
         return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))
 
+    #interpolation on the half grid
+    def interp_half(self, val, s, mn):
+        if s < self.shalf[1]:
+            v = val[1,mn]
+        elif s > self.shalf[-1]:
+            v = val[-1,0]
+        else:
+            vfunc = interpolate.interp1d(self.shalf,val[:,mn])
+            v = vfunc(s)
+        return v
+
 
     # return dvds, the volume derivative, which is 4 pi^2 abs(g_00). 
     def dvds(self, s, interp=False):        
@@ -251,14 +264,61 @@ class vmec_data:
             fs = self.s2fs(s)
             g = self.gmnc[fs,0]
         else:
-            if s < self.shalf[1]:
-                g = self.gmnc[1,0]
-            elif s > self.shalf[-1]:
-                g = self.gmnc[-1,0]
-            else:
-                gfunc = interpolate.interp1d(self.shalf,self.gmnc[:,0])
-                g = gfunc(s)
+            g = self.interp_half(self.gmnc, s, 0)
             
         dvds_val = abs(4 * np.pi**2 * g)
         return dvds_val
+        
+    def well(self, s):
+        #interpolate for bmn and gmn
+        bslice = np.empty(self.nmn)
+        gslice = np.empty(self.nmn)
+        for mn in xrange(self.nmn):
+            bslice[mn] = self.interp_half(self.bmnc, s, mn)
+            gslice[mn] = self.interp_half(self.gmnc, s, mn)
+
+        vol = 4*np.pi**2 * abs(gslice[0])
+        print vol
+        #print gslice
+        def bsqfunc(th, ze):
+            b = 0
+            for mn in xrange(self.nmn):
+                b += bslice[mn]*np.cos(self.xm[mn]*th - self.xn[mn]*ze)
+            return b*b
+
+        def gfunc(th, ze):
+            g = 0
+            for mn in xrange(self.nmn):
+                g += gslice[mn]*np.cos(self.xm[mn]*th - self.xn[mn]*ze)
+            return abs(g)
+
+        def bsqg(th, ze):
+            return bsqfunc(th,ze)*gfunc(th,ze)
+
+        #get flux surface average B**2
+        val, err = integrate.dblquad(bsqg, 0, 2*np.pi, lambda x: 0, lambda x: 2*np.pi)
+        print val/vol
+        #print bslice[0]**2
+    
+
+    #simple vacuum well, uses B_00 as <B> which isn't quite right
+    def well_simp(self, s):
+        b00_spl = interpolate.UnivariateSpline(self.shalf, self.bmnc[:,0])
+        g00_spl = interpolate.UnivariateSpline(self.shalf,
+                                               4*np.pi**2 * abs(self.gmnc[:,0]))
+        vol_spl = g00_spl.antiderivative()
+        db00_spl = b00_spl.derivative()
+
+        #print some values
+        print vol_spl(s)
+        print b00_spl(s)
+        print db00_spl(s)
+
+        svals = np.linspace(0,1,51)
+        plt.plot(svals, b00_spl(svals))
+        #plt.plot(svals, db00_spl(svals))
+        plt.show()
+        
+        
+                                           
         
