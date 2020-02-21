@@ -13,7 +13,7 @@ from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import fsolve
 import scipy.integrate as integrate
-import scipy.interpolate as interpolate
+import scipy.interpolate as interp
 
 try:
     imp.find_module('mayavi')
@@ -51,6 +51,14 @@ class vmec_data:
         self.iota = np.array(self.data.variables['iotaf'])
         self.pres = np.array(self.data.variables['pres'])
 
+        #interpolation stuff
+        self.interpb_at = -1
+        self.binterp = np.empty(self.nmn)
+        self.interpr_at = -1
+        self.rinterp = np.empty(self.nmn)
+        self.interpz_at = -1
+        self.zinterp = np.empty(self.nmn)
+        
 
     #convert a normalized flux value s to a flux surface index
     def s2fs(self, s, isint=True):
@@ -254,14 +262,14 @@ class vmec_data:
         elif s > self.shalf[-1]:
             v = val[-1,0]
         else:
-            vfunc = interpolate.interp1d(self.shalf,val[:,mn])
+            vfunc = interp.interp1d(self.shalf,val[:,mn])
             v = vfunc(s)
         return v
 
 
     # return dvds, the volume derivative, which is 4 pi^2 abs(g_00). 
-    def dvds(self, s, interp=False):        
-        if not interp:
+    def dvds(self, s, interpolate=False):        
+        if not interpolate:
             # if we don't want to interpolate, then get an actual value
             fs = self.s2fs(s)
             g = self.gmnc[fs,0]
@@ -305,8 +313,8 @@ class vmec_data:
 
     #simple vacuum well, uses B_00 as <B> which isn't quite right
     def well_simp(self, s):
-        b00_spl = interpolate.UnivariateSpline(self.shalf, self.bmnc[:,0])
-        g00_spl = interpolate.UnivariateSpline(self.shalf,
+        b00_spl = interp.UnivariateSpline(self.shalf, self.bmnc[:,0])
+        g00_spl = interp.UnivariateSpline(self.shalf,
                                                4*np.pi**2 * abs(self.gmnc[:,0]))
         vol_spl = g00_spl.antiderivative()
         db00_spl = b00_spl.derivative()
@@ -320,7 +328,44 @@ class vmec_data:
         plt.plot(svals, b00_spl(svals))
         #plt.plot(svals, db00_spl(svals))
         plt.show()
+
+
+    def interp_val(self, s, fourier='b'):
+        for i in xrange(self.nmn):
+            if fourier=='b':
+                bspl = interp.UnivariateSpline(self.s, self.bmnc[:,i])
+                self.interpb_at = s
+                self.binterp[i] = bspl(s)
+            elif fourier=='r':
+                bspl = interp.UnivariateSpline(self.s, self.rmnc[:,i])
+                self.interpr_at = s
+                self.rinterp[i] = bspl(s)
+            elif fourier=='z':
+                bspl = interp.UnivariateSpline(self.s, self.zmns[:,i])
+                self.interpz_at = s
+                self.zinterp[i] = bspl(s)
+            else:
+                print 'wrong value passed to interp_bmn'
+
         
+    #convert vmec to cylindrical 
+    def vmec2rpz(self, s, theta, zeta):
+        #interpolate the rmnc, and zmns arrays
+        if self.interpr_at != s:
+            self.interp_val(s, fourier='r')
+        if self.interpz_at != s:
+            self.interp_val(s, fourier='z')
+
         
-                                           
+        angle = self.xm*theta - self.xn*zeta
+        r = sum(self.rinterp*np.cos(angle))
+        z = sum(self.zinterp*np.sin(angle))
+
+        return r,z,zeta                  
         
+
+    def vmec2xyz(self,s,theta,zeta):
+        r,z,zeta = self.vmec2rpz(s,theta,zeta)
+        x = r*cos(zeta)
+        y = r*sin(zeta)
+        return x,y,z
