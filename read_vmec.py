@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import fsolve
 import scipy.integrate as integrate
 import scipy.interpolate as interp
+from scipy.optimize import minimize
 
 try:
     imp.find_module('mayavi')
@@ -361,11 +362,89 @@ class vmec_data:
         r = sum(self.rinterp*np.cos(angle))
         z = sum(self.zinterp*np.sin(angle))
 
-        return r,z,zeta                  
+        return r,zeta,z                  
         
 
     def vmec2xyz(self,s,theta,zeta):
-        r,z,zeta = self.vmec2rpz(s,theta,zeta)
-        x = r*cos(zeta)
-        y = r*sin(zeta)
+        r,phi,z = self.vmec2rpz(s,theta,zeta)
+        x = r*np.cos(phi)
+        y = r*np.sin(phi)
         return x,y,z
+
+    def xyz2vmec(self, x, y, z):
+        r = np.sqrt(x**2 + y**2)
+        phi = np.arctan2(y,x)
+        return self.rpz2vmec(r, phi, z)
+
+    def rpz2vmec(self,r,phi,z):
+        vmec_vec = np.empty(3)
+        vmec_vec[2] = phi
+        #we don't know what flux surface we're on so we can't really
+        #make use of the lambda variable
+        thguess = self.thetaguess(r,phi,z)
+        vmec_vec[0] = self.sguess(r,phi,z,thguess)
+        vmec_vec[1] = thguess
+
+        #this function takes a numpy array vmec_coords
+        #and returns a float representing the difference
+        def solve_function(vmec_coords):
+            
+            vmec_coords[0] = abs(vmec_coords[0])
+            rg, pg, zg = self.vmec2rpz(vmec_coords[0], vmec_coords[1],
+                                       vmec_coords[2])
+            #p is by definition correct, so we just look at r and z
+            ans = 0
+            ans += (r-rg)**2
+            #ans += (y-yg)**2
+            ans += (z-zg)**2
+            return np.sqrt(ans)
+
+        # set bounds for s, theta and zeta
+        bounds = ((0.0,1.0),(vmec_vec[1]-np.pi/2,vmec_vec[1]+np.pi/2),
+                  (vmec_vec[2]-0.001,vmec_vec[2]+0.001))
+
+        sol = minimize(solve_function, vmec_vec, method='L-BFGS-B',tol = 1.E-8,
+                       bounds=bounds)
+
+        s = sol.x[0]
+        mins = 1.0/(self.ns*3)
+        maxs = 1.0-mins
+        if s < mins:
+            print "warning: s value of ",s," is too low, answer may be incorrect"
+        if s > maxs:
+            print "warning: s value of ",s," is too high, answer may be incorrect"
+
+        return sol.x
+
+    def thetaguess(self, r, phi, z):
+        r0, phi0, z0 = self.vmec2rpz(0,0,phi)
+        r1, phi1, z1 = self.vmec2rpz(1,0,phi)
+
+        #get relative r and z for plasma and our point
+        r_pl = r1 - r0
+        z_pl = z1 - z0
+
+        r_pt = r - r0
+        z_pt = z - z0
+
+        #get theta for plasma and our point
+        th_pl = np.arctan2(z_pl, r_pl)
+        th_pt = np.arctan2(z_pt, r_pt)
+
+        return th_pt - th_pl
+
+    def sguess(self, r, phi, z, theta, r0=None, z0=None):
+        #if axis is not around, get it
+        if r0 is None:
+            r0, phi0, z0 = self.vmec2rpz(0,0,phi)
+
+        #get r and z at lcfs
+        r1, phi1, z1 = self.vmec2rpz(1, theta, phi)
+
+        #squared distances for plasma minor radius and our point at theta
+        d_pl = (r1 - r0)**2 + (z1 - z0)**2
+        d_pt = (r - r0)**2 + (z - z0)**2
+
+        #s guess is normalized radius squared
+        return d_pt/d_pl
+        
