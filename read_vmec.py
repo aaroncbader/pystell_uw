@@ -54,11 +54,16 @@ class vmec_data:
 
         #interpolation stuff
         self.interpb_at = -1
-        self.binterp = np.empty(self.nmn)
+        self.binterp = np.empty(self.nmnnyq)
         self.interpr_at = -1
         self.rinterp = np.empty(self.nmn)
         self.interpz_at = -1
         self.zinterp = np.empty(self.nmn)
+        self.interpl_at = -1
+        self.linterp = np.empty(self.nmn)
+
+        #splines get filled as needed
+        self.iotaspl = None
         
 
     #convert a normalized flux value s to a flux surface index
@@ -111,51 +116,109 @@ class vmec_data:
     #Calculates the mirror term on a given flux surface by comparing
     #the outboard midplane value at phi=0, and the outboard midplane value
     #at the half period.  This is the ROSE definition
-    def mirror(self, fs=-1):
-        if fs < 0:
-            fs = self.ns-1
-        B1 = self.modb_at_point(fs, 0, 0)
-        B2 = self.modb_at_point(fs, 0, np.pi/self.nfp)
-        print B1, B2
+    def mirror(self, s=1.0):
+        B1 = self.modb_at_point(s, 0, 0)
+        B2 = self.modb_at_point(s, 0, np.pi/self.nfp)
+        #print B1, B2
         return (B1 - B2)/(B1 + B2)
 
     
     #Calculate modb at a point.
-    def modb_at_point(self, fs, theta, phi):
+    def modb_at_point(self, s, theta, phi):
+    
+        self.interp_val(s,fourier='b')
         #remember bmnc is on the half grid, we'll do a dumb interpolation
-        return sum((self.bmnc[fs-1,:] + self.bmnc[fs:1])/2
+        return sum(self.binterp
                    *np.cos(self.xmnyq*theta - self.xnnyq*phi))
         
             
     #Plot modb on a field line starting at the outboard midplane for flux
     #surface index fs
-    #Note this is approximate because we don't interpolate B, it's evaluated on the half grid not the full grid.  Can fix with some effort
+    #This is mostly deprecated and now calls xyz_on_fieldline
     def modb_on_fieldline(self, fs, phimax=4*np.pi, npoints=1001,
                           phistart = 0, thoffset = 0, plot=True, show=False):
-        
-        iota = self.iota[fs]
-        phi = np.linspace(phistart,phimax+phistart,npoints)
-        thetastar = phi*iota + thoffset
-        theta = np.zeros(npoints)
-        modB = np.zeros(npoints)
-        rstart = sum(self.rmnc[fs,:])
 
-        def theta_solve(x):
-            lam = self.lmns[fs,:]
-            lam1 = sum(lam*np.sin(self.xm*x - self.xn*phi[i]))
-            return x + lam1 - thetastar[i]
-        
-        for i in xrange(npoints):
-            theta[i] = fsolve(theta_solve, thetastar[i])
-            
-            modB[i] = sum(self.bmnc[fs,:]*np.cos(
-                self.xmnyq*theta[i] - self.xnnyq*phi[i]))            
-            
+        s = float(fs)/self.ns
+        phi, modB, theta = self.xyz_on_fieldline(s,thoffset,phistart,
+                            phimax=phimax, npoints=npoints,
+                            invmec=True, plot=False,
+                            onlymodB = True)
+
         if plot:
             plt.plot(phi, modB)
             if show:
                 plt.show()
-        return phi,modB,theta
+        return phi, modB, theta
+
+    #Get x,y,z and modB on a fieldline, options to return r,phi,z instead
+    #and some plotting options. Input is three starting coordinates, field following is in the forward direction for now only
+    # if starting coordinates are x,y,z no flags are needed
+    # if starting coordinates are r,p,z need to set inrpz
+    # if starting coordinates are vmec coords, set invmec
+
+    def xyz_on_fieldline(self, x, y, z, phimax=4*np.pi, npoints=1001,
+                         invmec=False, inrpz=False, retrpz=False,
+                         plot = True, show = False, onlymodB = False):
+        if not invmec and not inrpz:
+            s, theta, zeta = self.xyz2vmec(x,y,z)
+        elif not invmec and inrpz:
+            s, theta, zeta = self.rpz2vmec(x,y,z)
+        elif invmec and not inrpz:
+            s = x
+            theta = y
+            zeta = z
+        else:
+            print "Cannot set both invmec and inrpz, silly"
+            return
+
+        #interp the rz grids
+        self.interp_val(s, fourier='r')
+        self.interp_val(s, fourier='z')
+        self.interp_val(s, fourier='l')
+        self.interp_val(s, fourier='b')
+
+        if self.iotaspl == None:
+             self.iotaspl = interp.UnivariateSpline(self.s, self.iota)
+        iota = self.iotaspl(s)
+        phi = np.linspace(zeta, zeta+phimax, npoints)
+        thetastar = phi*iota + theta
+        theta = np.zeros(npoints)
+        modB = np.zeros(npoints)
+        if not onlymodB:
+            rarr = np.zeros(npoints)
+            zarr = np.zeros(npoints)
+
+        def theta_solve(x):
+            lam = sum(self.linterp*np.sin(self.xm*x - self.xn*phi[i]))
+            return x + lam - thetastar[i]
+
+        for i in xrange(npoints):
+            theta[i] = fsolve(theta_solve, thetastar[i])
+            modB[i] = sum(self.binterp*np.cos(self.xmnyq*theta[i] -
+                                              self.xnnyq*phi[i]))
+            angle = self.xm*theta[i] - self.xn*phi[i]
+            if not onlymodB:
+                rarr[i] = sum(self.rinterp*np.cos(angle))
+                zarr[i] = sum(self.zinterp*np.sin(angle))
+                          
+        if not onlymodB:
+            xarr = rarr*np.cos(phi)
+            yarr = rarr*np.sin(phi)
+
+        if plot:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            ax.plot(xarr,yarr,zarr)
+            if show:
+                plt.show()
+        if retrpz:
+            return rarr, phi, zarr, modB
+        if onlymodB:
+            return phi, modB, theta
+        else:
+            return xarr, yarr, zarr, modB
+            
+        
 
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
@@ -332,21 +395,36 @@ class vmec_data:
 
 
     def interp_val(self, s, fourier='b'):
-        for i in xrange(self.nmn):
-            if fourier=='b':
-                bspl = interp.UnivariateSpline(self.s, self.bmnc[:,i])
+        if fourier=='b':
+            if self.interpb_at == s:
+                return
+            for i in xrange(self.nmnnyq):
+                bspl = interp.UnivariateSpline(self.shalf, self.bmnc[:,i])
                 self.interpb_at = s
                 self.binterp[i] = bspl(s)
-            elif fourier=='r':
+        elif fourier=='r':
+            if self.interpr_at == s:
+                return
+            for i in xrange(self.nmn):
                 bspl = interp.UnivariateSpline(self.s, self.rmnc[:,i])
-                self.interpr_at = s
+                self.interpr_at = s         
                 self.rinterp[i] = bspl(s)
-            elif fourier=='z':
+        elif fourier=='z':
+            if self.interpz_at == s:
+                return
+            for i in xrange(self.nmn):
                 bspl = interp.UnivariateSpline(self.s, self.zmns[:,i])
                 self.interpz_at = s
                 self.zinterp[i] = bspl(s)
-            else:
-                print 'wrong value passed to interp_bmn'
+        elif fourier=='l':
+            if self.interpl_at == s:
+                return
+            for i in xrange(self.nmn):
+                bspl = interp.UnivariateSpline(self.s, self.lmns[:,i])
+                self.interpl_at = s
+                self.linterp[i] = bspl(s)
+        else:
+                print 'wrong value passed to interp_val'
 
         
     #convert vmec to cylindrical 
