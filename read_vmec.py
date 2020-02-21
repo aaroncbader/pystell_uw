@@ -48,7 +48,7 @@ class vmec_data:
         self.ns = len(self.psi)
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
-        self.iota = np.array(self.data.variables['iotas'])
+        self.iota = np.array(self.data.variables['iotaf'])
         self.pres = np.array(self.data.variables['pres'])
 
 
@@ -113,7 +113,9 @@ class vmec_data:
     
     #Calculate modb at a point.
     def modb_at_point(self, fs, theta, phi):
-        return sum(self.bmnc[fs,:]*np.cos(self.xmnyq*theta - self.xnnyq*phi))
+        #remember bmnc is on the half grid, we'll do a dumb interpolation
+        return sum((self.bmnc[fs-1,:] + self.bmnc[fs:1])/2
+                   *np.cos(self.xmnyq*theta - self.xnnyq*phi))
         
             
     #Plot modb on a field line starting at the outboard midplane for flux
