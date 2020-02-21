@@ -43,7 +43,7 @@ class boozer:
         self.charge = 1.602E-19
 
     #convert a boozer s, theta, zeta to r,z,phi
-    def booz2rzp(self, s, theta, zeta):
+    def booz2rpz(self, s, theta, zeta):
         
         #get the r value
         r = self.field_at_point(s, theta, zeta, fourier='r')
@@ -51,10 +51,10 @@ class boozer:
         z = self.field_at_point(s, theta, zeta, fourier='z')
         #get the phi value
         phi = zeta + self.field_at_point(s, theta, zeta, fourier='p')
-        return r, z, phi
+        return r, phi, z
 
     def booz2xyz(self, s, theta, zeta):
-        r,z,phi = self.booz2rzp(s, theta, zeta)
+        r,phi,z = self.booz2rpz(s, theta, zeta)
         x = r*np.cos(phi)
         y = r*np.sin(phi)
         return x,y,z
@@ -71,8 +71,8 @@ class boozer:
         booz_vec = np.empty(3)
 
         #get guesses for theta and s
-        thguess = self.thetaguess(r, z, phi)
-        booz_vec[0] = self.sguess(r, z, phi, thguess)
+        thguess = self.thetaguess(r, phi, z)
+        booz_vec[0] = self.sguess(r, phi, z, thguess)
         booz_vec[1] = thguess
         booz_vec[2] = phi
 
@@ -223,13 +223,13 @@ class boozer:
 
 
     #guess for s given a point in r,z,phi and a guess for theta
-    def sguess(self, r, z, phi, theta, r0=None, z0=None):
+    def sguess(self, r, phi, z, theta, r0=None, z0=None):
         #if axis is not around, get it
         if r0 is None:
-            r0, z0, phi0 = self.booz2rzp(0,0,phi)
+            r0, phi0, z0 = self.booz2rpz(0,0,phi)
 
         #get r and z at lcfs
-        r1, z1, phi1 = self.booz2rzp(1, theta, phi)
+        r1, phi1, z1 = self.booz2rpz(1, theta, phi)
 
         #squared distances for plasma minor radius and our point at theta
         d_pl = (r1 - r0)**2 + (z1 - z0)**2
@@ -240,9 +240,9 @@ class boozer:
 
     #Give a guess for theta by considering the axis and LCFS
     #at zeta = phi
-    def thetaguess(self, r, z, phi):
-        r0, z0, phi0 = self.booz2rzp(0,0,phi)
-        r1, z1, phi1 = self.booz2rzp(1,0,phi)
+    def thetaguess(self, r, phi, z):
+        r0, phi0, z0 = self.booz2rpz(0,0,phi)
+        r1, phi1, z1 = self.booz2rpz(1,0,phi)
 
         #get relative r and z for plasma and our point
         r_pl = r1 - r0
