@@ -1,4 +1,4 @@
-#Author: Aaron Bader, UW-Madison 2018
+#Author: Aaron Bader, UW-Madison 2020
 #This is a file to read from a VMEC wout file and
 #plot various quantities of interest
 #
@@ -33,6 +33,9 @@ class vmec_data:
         self.lmns = np.array(self.data.variables['lmns'][:])
         self.bmnc = np.array(self.data.variables['bmnc'][:])
         self.gmnc = np.array(self.data.variables['gmnc'][:])
+        self.bsubumnc = np.array(self.data.variables['bsubumnc'][:])
+        self.bsubvmnc = np.array(self.data.variables['bsubvmnc'][:])
+
         self.xm = np.array(self.data.variables['xm'][:])
         self.xn = np.array(self.data.variables['xn'][:])
         self.xmnyq = np.array(self.data.variables['xm_nyq'][:])
@@ -40,8 +43,13 @@ class vmec_data:
         self.raxis = np.array(self.data.variables['raxis_cc'][:])
         self.zaxis = np.array(self.data.variables['zaxis_cs'][:])
         self.nfp = np.array(self.data.variables['nfp'])
+        self.ntor = np.array(self.data.variables['ntor'])
+        self.mpol = np.array(self.data.variables['mpol'])
+        self.mnyq = int(max(abs(self.xmnyq)))
+        self.nnyq = int(max(abs(self.xnnyq))/self.nfp)
         self.a = np.array(self.data.variables['Aminor_p'])
         self.psi = np.array(self.data.variables['phi'])
+        self.psips = np.array(self.data.variables['phips'])
         self.s = self.psi/self.psi[-1] #integer grid
         self.shalf = self.s - self.s[1]/2 #half grid
         self.volume = np.array(self.data.variables['volume_p'])
@@ -50,7 +58,18 @@ class vmec_data:
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
         self.iota = np.array(self.data.variables['iotaf'])
+        self.hiota = np.array(self.data.variables['iotas']) #half grid
         self.pres = np.array(self.data.variables['pres'])
+        self.betavol = np.array(self.data.variables['beta_vol'])
+        self.bvco = np.array(self.data.variables['bvco'])
+        self.buco = np.array(self.data.variables['buco'])
+
+        self.aspect = np.array(self.data.variables['aspect'])
+        self.rmax_surf = np.array(self.data.variables['rmax_surf'])
+        self.rmin_surf = np.array(self.data.variables['rmin_surf'])
+        self.zmax_surf = np.array(self.data.variables['zmax_surf'])
+        self.betaxis = np.array(self.data.variables['betaxis'])
+	
 
         #interpolation stuff
         self.interpb_at = -1
