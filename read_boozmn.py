@@ -263,7 +263,7 @@ class boozer:
     # rovera is whether to plot wrt r/a or s
     # ignore0 is whether to ignore the B00 mode
     def plot_largest_modes(self, fs=-1, n=10, rovera=True, ignore0=True,
-                           show=True, ax=None):
+                           show=True, ax=None, xaxis=None):
         # get sorting index for the desired slice
         bslice = self.bmnc[fs,:]
         bslice = -1*abs(bslice)
@@ -291,7 +291,10 @@ class boozer:
                         ', m=' + str(self.xm[sortvals[i]]))
                 leg.append(legs)
             plt.legend(leg)
-            plt.xlabel('$r/a$')
+            if rovera:
+                plt.xlabel('$r/a$')
+            else:
+                plt.xlabel('$s$')
             plt.ylabel('$B_{mn}$')
         else:
             for i in xrange(startval,n+startval):
@@ -300,7 +303,10 @@ class boozer:
                         ', m=' + str(self.xm[sortvals[i]]))
                 leg.append(legs)
             ax.legend(leg)
-            ax.set_xlabel('$r/a$')
+            if rovera:
+                ax.set_xlabel('$r/a$')
+            else:
+                ax.set_xlabel('$s$')
             ax.set_ylabel('$B_{mn}$')
                 
         if show:
