@@ -100,9 +100,9 @@ class boozer:
         mins = 1.0/(self.nr*3)
         maxs = 1.0-mins
         if s < mins:
-            print "warning: s value of ",s," is too low, answer may be incorrect"
+            print("warning: s value of ",s," is too low, answer may be incorrect")
         if s > maxs:
-            print "warning: s value of ",s," is too high, answer may be incorrect"
+            print("warning: s value of ",s," is too high, answer may be incorrect")
 
         return sol.x
                             
@@ -113,7 +113,7 @@ class boozer:
         
         
         #self.dbdpsi = np.empty(self.mnmodes)
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             if fourier=='b':
                 bspl = interp.UnivariateSpline(self.sr, self.bmnc[:,i])
                 self.interpb_at = s
@@ -131,7 +131,7 @@ class boozer:
                 self.interpp_at = s
                 self.pinterp[i] = bspl(s)
             else:
-                print 'wrong value passed to interp_bmn'
+                print('wrong value passed to interp_bmn')
 
 
             
@@ -176,7 +176,7 @@ class boozer:
         if self.interp_at != s:
             self.interp_bmn(s)
         b = np.zeros(4)
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             #if self.xn[i] > 5 or self.xm[i] > 5:
             #    continue
             angle = self.xm[i]*theta - self.xn[i]*zeta
@@ -198,8 +198,8 @@ class boozer:
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         b = np.empty([ntheta,nzeta])
-        for i in xrange(nzeta):           
-            for j in xrange(ntheta):
+        for i in range(nzeta):           
+            for j in range(ntheta):
                 b[j,i] = self.field_at_point(s, theta[j], zeta[i])
             #print zeta[i], theta[j], b[j,i]    
                 
@@ -213,10 +213,10 @@ class boozer:
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         psidot = np.empty([ntheta,nzeta])
-        for i in xrange(nzeta):           
-            for j in xrange(ntheta):
+        for i in range(nzeta):           
+            for j in range(ntheta):
                 psidot[j,i] = self.dpsidt(s,theta[j],zeta[i])
-            print zeta[i], theta[j], psidot[j,i]
+            #print zeta[i], theta[j], psidot[j,i]
         plt.contour(zeta, theta, psidot, 20)
         plt.colorbar()
         plt.show()
@@ -285,7 +285,7 @@ class boozer:
         
         #now plot the 10 largest
         if ax is None:
-            for i in xrange(startval,n+startval):
+            for i in range(startval,n+startval):
                 plt.plot(xaxis, self.bmnc[:,sortvals[i]])
                 legs = ('n=' + str(self.xn[sortvals[i]]) +
                         ', m=' + str(self.xm[sortvals[i]]))
@@ -297,7 +297,7 @@ class boozer:
                 plt.xlabel('$s$')
             plt.ylabel('$B_{mn}$')
         else:
-            for i in xrange(startval,n+startval):
+            for i in range(startval,n+startval):
                 ax.plot(xaxis, self.bmnc[:,sortvals[i]])
                 legs = ('n=' + str(self.xn[sortvals[i]]) +
                         ', m=' + str(self.xm[sortvals[i]]))

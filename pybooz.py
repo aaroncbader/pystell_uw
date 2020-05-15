@@ -84,7 +84,7 @@ class vmec2booz:
         self.hs = 1.0/self.ohs
         #self.sfull = np.empty(self.ns)
         #self.sfull[0] = 0.0
-        #for i in xrange(1,self.ns):
+        #for i in range(1,self.ns):
         #    self.sfull[i] = np.sqrt(self.hs*i)
         self.sfull = np.sqrt(vmecdata.s)
 
@@ -96,11 +96,12 @@ class vmec2booz:
         dzt = 2*np.pi/(self.nv_boz*self.nfp)
         dth = 2*np.pi/(2*(self.nu3_b-1))
         lk = 0
-        print dzt, dth
+        #print dzt, dth
+    
         self.thgrid = np.empty(self.nunv)
         self.ztgrid = np.empty(self.nunv)
-        for lt in xrange(1, self.nu3_b+1):
-            for lz in xrange(1, self.nv_boz+1):
+        for lt in range(1, self.nu3_b+1):
+            for lz in range(1, self.nv_boz+1):
                 self.thgrid[lk] = (lt-1)*dth
                 self.ztgrid[lk] = (lz-1)*dzt
                 lk += 1
@@ -127,7 +128,7 @@ class vmec2booz:
         #From here we start with the surfaces again ignore asym options
         #Note that jrad is an index, and python indexes at 0 not 1
         #So jrad will be one less than in booz_xform.f
-        for jrad in xrange(1,self.ns):
+        for jrad in range(1,self.ns):
             bsubtmnc = vmecdata.bsubumnc[jrad,:]
             bsubzmnc = vmecdata.bsubvmnc[jrad,:]
             pmns = np.empty(self.nmnnyq)
@@ -218,13 +219,13 @@ class vmec2booz:
     def setup_xmnb(self):
         n2 = self.nboz
         mnboz0 = 0
-        for m in xrange(self.mboz):
+        for m in range(self.mboz):
             n1 = -self.nboz
             if m == 0:
                 n1 = 0
-            for n in xrange(n1, n2+1):
+            for n in range(n1, n2+1):
                 if mnboz0 >= self.mnboz:
-                    print "problem: mnboz0 > mnboz"
+                    print("problem: mnboz0 > mnboz")
                     return
                 self.xnb[mnboz0] = n*self.nfp
                 self.xmb[mnboz0] = m
@@ -242,7 +243,7 @@ class vmec2booz:
         cosm[:,1] = np.cos(th)
         sinm[:,1] = np.sin(th)
 
-        for m in xrange(2,mpol+1):
+        for m in range(2,mpol+1):
             cosm[:,m] = cosm[:,m-1]*cosm[:,1] - sinm[:,m-1]*sinm[:,1]
             sinm[:,m] = sinm[:,m-1]*cosm[:,1] + cosm[:,m-1]*sinm[:,1]
   
@@ -252,7 +253,7 @@ class vmec2booz:
             cosn[:,1] = np.cos(zt*self.nfp)
             sinn[:,1] = np.sin(zt*self.nfp)
 
-        for n in xrange(2,ntor+1):
+        for n in range(2,ntor+1):
             cosn[:,n] = cosn[:,n-1]*cosn[:,1] - sinn[:,n-1]*sinn[:,1]
             sinn[:,n] = sinn[:,n-1]*cosn[:,1] + cosn[:,n-1]*sinn[:,1]
 
@@ -260,7 +261,7 @@ class vmec2booz:
 
     def transpmn(self, pmns, bsubtmnc, bsubzmnc, gpsi, Ipsi, jrad):
 
-        for mn in xrange(self.nmnnyq):
+        for mn in range(self.nmnnyq):
             if int(self.xmnyq[mn]) != 0:
                 pmns[mn] = bsubtmnc[mn]/self.xmnyq[mn]
             elif int(self.xnnyq[mn]) != 0:
@@ -275,7 +276,7 @@ class vmec2booz:
         js = jrad
         js1 = js - 1
         if (js <= 0):
-            print 'Something wrong js <= 0'
+            print('Something wrong js <= 0')
             return
         r = 0.0
         z = 0.0
@@ -306,7 +307,7 @@ class vmec2booz:
         t1 = t1/2
         t2 = t2/2
 
-        for mn in xrange(0,self.mnmax):
+        for mn in range(0,self.mnmax):
             m = int(self.xm[mn])
             if m % 2 != nparity:
                 continue
@@ -335,7 +336,7 @@ class vmec2booz:
         wz[:] = 0
         w[:] = 0
         bmod[:] = 0
-        for mn in xrange(self.nmnnyq):
+        for mn in range(self.nmnnyq):
 
             m = int(self.xmnyq[mn])
             n = int(abs(self.xnnyq[mn]/self.nfp))
@@ -363,7 +364,7 @@ class vmec2booz:
 
         jacfac = gpsi[js] + self.hiota[js]*ipsi[js]
         if (jacfac == 0):
-            print "Something's wrong, jacfac = 0"
+            print("Something's wrong, jacfac = 0")
         dem = 1.0/jacfac
         gpsi1 = gpsi[js]*dem
         hiota1 = self.hiota[js]*dem
@@ -416,7 +417,7 @@ class vmec2booz:
 
         i = nv*(nu2-1)
         imax = i+nv
-        for m in xrange(self.mboz+1):
+        for m in range(self.mboz+1):
             self.cosmm[:nv,m] = 0.5*self.cosmm[:nv,m]
             self.cosmm[i:imax,m] = 0.5*self.cosmm[i:imax,m]
             self.sinmm[:nv,m] = 0.5*self.sinmm[:nv,m]
@@ -424,7 +425,7 @@ class vmec2booz:
 
         bbjac = jacfac / (bmod_b * bmod_b)
 
-        for mn in xrange(self.mnboz):
+        for mn in range(self.mnboz):
             m = int(self.xmb[mn])
             n = int(abs(self.xnb[mn])/self.nfp)
             sgn = np.sign(self.xnb[mn])
@@ -463,7 +464,7 @@ class vmec2booz:
         self.cosnn = np.empty(self.nboz+1)
         self.sinnn = np.empty(self.nboz+1)
 
-        for angles in xrange(4):
+        for angles in range(4):
             self.cosmm[0] = 1.0
             self.sinmm[0] = 0.0
             self.cosmm[1] = np.cos(self.u_b[angles])
@@ -475,19 +476,19 @@ class vmec2booz:
                 self.cosnn[1] = np.cos(self.v_b[angles]*self.nfp)
                 self.sinnn[1] = np.sin(self.v_b[angles]*self.nfp)
 
-            for m in xrange(2,self.mboz+1):
+            for m in range(2,self.mboz+1):
                 self.cosmm[m] = (self.cosmm[m-1]*self.cosmm[1] - 
                                  self.sinmm[m-1]*self.sinmm[1])
                 self.sinmm[m] = (self.sinmm[m-1]*self.cosmm[1] + 
                                  self.cosmm[m-1]*self.sinmm[1])
 
-            for n in xrange(2,self.nboz+1):
+            for n in range(2,self.nboz+1):
                 self.cosnn[n] = (self.cosnn[n-1]*self.cosnn[1] - 
                                  self.sinnn[n-1]*self.sinnn[1])
                 self.sinnn[n] = (self.sinnn[n-1]*self.cosnn[1] + 
                                  self.cosnn[n-1]*self.sinnn[1])
 
-            for mn in xrange(self.mnboz):
+            for mn in range(self.mnboz):
                 m = int(self.xmb[mn])
                 n = int(self.xnb[mn])/self.nfp
                 sgn = np.sign(self.xnb[mn])
@@ -523,7 +524,7 @@ class vmec2booz:
 
     def printvar(self, wf, data, title):
         wf.write(title+'\n')
-        for j in xrange(1,self.ns):
+        for j in range(1,self.ns):
             wf.write('jindex: '+str(j)+'\n')
             wf.write(str(data[:,j])[1:-1] + '\n')
 
