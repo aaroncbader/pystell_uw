@@ -146,7 +146,7 @@ class vmec_data:
     def modb_at_point(self, s, theta, phi):
     
         self.interp_val(s,fourier='b')
-        #remember bmnc is on the half grid, we'll do a dumb interpolation
+        #remember bmnc is on the half grid
         return sum(self.binterp
                    *np.cos(self.xmnyq*theta - self.xnnyq*phi))
         
@@ -241,7 +241,7 @@ class vmec_data:
 
     #This works, but there is an issue with plot display at high
     #resolution.  I have not figured out how to fix it yet
-    def modb_on_surface(self, fs=-1, ntheta=64, nphi=64, plot=True,
+    def modb_on_surface(self, s=1, ntheta=64, nphi=64, plot=True,
                         show=False, outxyz=None, full=False, alpha=1,
                         mayavi=True):
         #first attempt will use trisurface, let's see how it looks
@@ -263,12 +263,14 @@ class vmec_data:
             p = phi[phii]
             for ti in range(ntheta):
                 th = theta[ti]
-                r[phii,ti] = self.r_at_point(fs,th,p)
-                z[phii,ti] = self.z_at_point(fs,th,p)
+                r[phii,ti] = self.r_at_point(s,th,p)
+                z[phii,ti] = self.z_at_point(s,th,p)
                 x[phii,ti] += r[phii,ti]*np.cos(p)
                 y[phii,ti] += r[phii,ti]*np.sin(p)
-                b[phii,ti] = self.modb_at_point(fs, th, p)
+                b[phii,ti] = self.modb_at_point(s, th, p)
+        
         my_col = cm.jet((b-np.min(b))/(np.max(b)-np.min(b)))
+        
         if plot and (not use_mayavi or not mayavi):
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
@@ -289,7 +291,7 @@ class vmec_data:
             if show:               
                 plt.show()
 
-        elif plot and use_mayavi:
+        elif plot and use_mayavi and mayavi:
             mlab.figure(bgcolor=(1.0, 1.0, 1.0), size=(800,600))
             mlab.mesh(x,y,z, scalars=b)
             if show:
@@ -332,11 +334,13 @@ class vmec_data:
                 plt.show()
         return s,pres
     
-    def r_at_point(self, fs, theta, phi):
-        return sum(self.rmnc[fs,:]*np.cos(self.xm*theta - self.xn*phi))
+    def r_at_point(self, s, theta, phi):
+        self.interp_val(s,fourier='r')
+        return sum(self.rinterp*np.cos(self.xm*theta - self.xn*phi))
     
-    def z_at_point(self, fs, theta, phi):
-        return sum(self.zmns[fs,:]*np.sin(self.xm*theta - self.xn*phi))
+    def z_at_point(self, s, theta, phi):
+        self.interp_val(s,fourier='z')
+        return sum(self.zinterp*np.sin(self.xm*theta - self.xn*phi))
 
     #interpolation on the half grid
     def interp_half(self, val, s, mn):
