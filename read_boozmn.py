@@ -19,6 +19,7 @@ class boozer:
         self.rmnc = np.array(self.data.variables['rmnc_b'][:])
         self.zmns = np.array(self.data.variables['zmns_b'][:])
         self.pmns = np.array(self.data.variables['pmns_b'][:])
+        self.gmn = np.array(self.data.variables['gmn_b'][:])
         self.xm =  np.array(self.data.variables['ixm_b'][:])
         self.xn =  np.array(self.data.variables['ixn_b'][:])
         self.phi = np.array(self.data.variables['phi_b'][:])
@@ -194,7 +195,7 @@ class boozer:
         #gamma = self.charge*(
         return b[2]
 
-    def make_modb_contour(self, s, ntheta, nzeta, plot = True):
+    def make_modb_contour(self, s, ntheta, nzeta, plot = True, show = False):
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         b = np.empty([ntheta,nzeta])
@@ -204,9 +205,10 @@ class boozer:
             #print zeta[i], theta[j], b[j,i]    
                 
         if plot:
-            plt.contour(zeta, theta, b, 60)
-            plt.colorbar()
-            plt.show()
+            plt.contourf(zeta, theta, b, 60, cmap='jet')
+            #plt.colorbar()
+            if show:
+                plt.show()
         return [theta, zeta, b]
 
     def make_dpsidt_contour(self, s, ntheta, nzeta):
