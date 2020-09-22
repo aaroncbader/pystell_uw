@@ -14,8 +14,8 @@ import read_vmec
 
 class vmec2booz:
     def __init__(self, vmecdata, nboz, mboz):
-        self.nboz = nboz
-        self.mboz = mboz
+        self.nboz = int(nboz)
+        self.mboz = int(mboz)
         self.mnboz = nboz+1 + (mboz-1)*(1+(2*nboz))
 
         #data from the vmec file
@@ -67,19 +67,26 @@ class vmec2booz:
         #make the xnb and xmb arrays
         self.xnb = np.empty(self.mnboz)
         self.xmb = np.empty(self.mnboz)
+
         self.setup_xmnb()
+        print(self.xnb)
+        print(self.xmb)
         self.nu_boz = 2*(2*mboz+1)
         self.nv_boz = 2*(2*nboz+1)
-        self.nu2_b = self.nu_boz/2 + 1
-        self.nv2_b = self.nv_boz/2 + 1
+        self.nu2_b = self.nu_boz//2 + 1
+        self.nv2_b = self.nv_boz//2 + 1
         #scale factor for Fourier transform normalization
         self.fac = 2.0/((self.nu2_b-1) * self.nv_boz) #\todo add lasym
         self.scl = np.empty(self.mnboz)
         self.scl[1:] = self.fac
         self.scl[0] = self.fac/2 #the m=0, n=0 mode is this the first one
 
+        print(self.nu2_b, self.nv2_b)
+
         #ntorsum appears to be the indices of all modes with m=1
+        #NOTE: this is wrong!
         self.ntorsum = (nboz+1, 3*nboz + 2)
+        print("ntorsum: ",self.ntorsum)
         self.ohs = vmecdata.ns - 1
         self.hs = 1.0/self.ohs
         #self.sfull = np.empty(self.ns)
@@ -90,6 +97,8 @@ class vmec2booz:
 
         self.nu3_b = self.nu2_b #\todo fix for lasym
         self.nunv = self.nu3_b*self.nv_boz
+
+        print(self.nu3_b, self.nv_boz)
 
         #make theta and zeta grids (in foranl.f)
         #for now just copy the inefficient fortran way
@@ -113,6 +122,7 @@ class vmec2booz:
         self.sinm_b = np.copy(sinm)
         self.cosn_b = np.copy(cosn)
         self.sinn_b = np.copy(sinn)
+        
 
 
 
@@ -123,7 +133,6 @@ class vmec2booz:
         self.cosn_nyq = np.copy(cosn)
         self.sinn_nyq = np.copy(sinn)
         #By this point we are done with foranl.f                      
-
 
         #From here we start with the surfaces again ignore asym options
         #Note that jrad is an index, and python indexes at 0 not 1
@@ -138,6 +147,8 @@ class vmec2booz:
             Ipsi[:] = 0.0
             
             self.transpmn(pmns, bsubtmnc, bsubzmnc, gpsi, Ipsi, jrad)
+
+                        
 
             #in booz_xform these are all nunv sized even though
             #that size is larger than nmn, or nmnnyq
@@ -160,15 +171,22 @@ class vmec2booz:
 
             r1, z1, lt, lz, lam = self.vcoords_rz(jrad, r1, z1, lt, lz, 
                                   lam, nparity=0)
-            
+                        
             rodd, zodd, lt, lz, lam = self.vcoords_rz(jrad, rodd, zodd,
                                   lt, lz, lam, nparity=1)
+
+                
+
 
             wt, wz, wp = self.vcoords_w(jrad, pmns, wt, wz, wp, bmod_b)
 
             jacfac, p1, q1, xjac = self.harfun(gpsi, Ipsi, jrad, 
                                    lt, lz, lam, wt, wz, wp)
-
+            if jrad == 9:
+                print("p1: ",p1[:10])
+                print("q1: ",q1[:10])
+                print("xjac: ",xjac[:10])
+ 
               
             r12 = np.empty(self.nunv)
             z12 = np.empty(self.nunv)
@@ -183,6 +201,7 @@ class vmec2booz:
             self.sinmm = None
             self.sinnn = None
 
+            
             #cosmm etc. is returned here but appears to be overwritten below?
 
             self.boozerfun(bmod_b, r12, z12, p1, q1, xjac, jacfac, jrad)
@@ -191,11 +210,20 @@ class vmec2booz:
             self.sinmm[:] = 0.0
             self.sinnn[:] = 0.0
 
+            if jrad == 2:
+                print("bmncb: ",self.bmncb[:10,jrad])
+                print("rmncb: ",self.rmncb[:10,jrad])
+                print("zmnsb: ",self.zmnsb[:10,jrad])
+                print("pmnsb: ",self.pmnsb[:10,jrad])
+                print("gmncb: ",self.gmncb[:10,jrad])
+
+            
             # We store angles corresponding to 0 and pi, have to subtract 1
             # due to the python/fortran index difference
             self.u_b = np.empty(4)
             self.v_b = np.empty(4)
             piv = self.ztgrid[self.nv2_b - 1]
+            
             self.u_b[0] = p1[0]
             self.v_b[0] = q1[0]
             self.u_b[2] = p1[self.nv2_b-1]
@@ -204,13 +232,18 @@ class vmec2booz:
             piu = self.thgrid[i1]
             self.u_b[1] = piu+p1[i1]
             self.v_b[1] = q1[i1]
+            
             i1 = self.nv2_b-1 + self.nv_boz*(self.nu2_b-1)
             self.u_b[3] = piu+p1[i1]
             self.v_b[3] = piv+q1[i1]
-
+            
+            #if jrad == 9:
+            #    print("u_b",self.u_b)
+            #    print("v_b",self.v_b)
 
             bmodb = self.modbooz(jrad)
-            #print 'bmodb',bmodb
+            #if jrad == 9:
+            #    print('bmodb',bmodb)
 
 
     #Set up the arrays of xnb and xmb, these
@@ -417,6 +450,8 @@ class vmec2booz:
 
         i = nv*(nu2-1)
         imax = i+nv
+        if jrad == 9:
+            print("i,max,",i,imax)
         for m in range(self.mboz+1):
             self.cosmm[:nv,m] = 0.5*self.cosmm[:nv,m]
             self.cosmm[i:imax,m] = 0.5*self.cosmm[i:imax,m]
@@ -490,12 +525,14 @@ class vmec2booz:
 
             for mn in range(self.mnboz):
                 m = int(self.xmb[mn])
-                n = int(self.xnb[mn])/self.nfp
+                n = int(self.xnb[mn])//self.nfp
                 sgn = np.sign(self.xnb[mn])
                 cost = (self.cosmm[m]*self.cosnn[n] + 
                         self.sinmm[m]*self.sinnn[n]*sgn)
 
                 bmod[angles] += bmnc[mn]*cost
+                #if angles == 3 and jrad == 9:
+                #    print(mn, cost, bmnc[mn])
                 #lasym here
                 #print 'stuff',angles,mn,bmnc[mn],cost
                 
