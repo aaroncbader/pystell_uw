@@ -59,6 +59,7 @@ class vmec_data:
         self.nmnnyq = len(self.xmnyq)
         self.iota = np.array(self.data.variables['iotaf'])
         self.hiota = np.array(self.data.variables['iotas']) #half grid
+        self.jdotb = np.array(self.data.variables['jdotb'])
         self.pres = np.array(self.data.variables['pres'])
         self.betavol = np.array(self.data.variables['beta_vol'])
         self.bvco = np.array(self.data.variables['bvco'])
@@ -293,7 +294,7 @@ class vmec_data:
 
         elif plot and use_mayavi and mayavi:
             mlab.figure(bgcolor=(1.0, 1.0, 1.0), size=(800,600))
-            mlab.mesh(x,y,z, scalars=b)
+            mlab.contour3d(x,y,z, b)
             if show:
                 mlab.show()
                 
@@ -304,7 +305,7 @@ class vmec_data:
                     s = (str(x[phii,ti]) + '\t' + str(y[phii,ti]) + '\t'
                          + str(z[phii,ti]) + '\n')
                     wf.write(s)
-        #return [x, y, z, b]
+        return [x, y, z, b]
             
 
     def axis(self, phi):
@@ -334,6 +335,15 @@ class vmec_data:
                 plt.show()
         return s,pres
     
+    def current(self, plot=True, show=False):
+        s = self.psi[1:]/self.psi[-1]
+        jdotb = self.jdotb[1:]
+        if plot:
+            plt.plot(s, jdotb)
+            if show:
+                plt.show()
+        return s,jdotb
+
     def r_at_point(self, s, theta, phi):
         self.interp_val(s,fourier='r')
         return sum(self.rinterp*np.cos(self.xm*theta - self.xn*phi))
