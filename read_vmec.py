@@ -54,7 +54,7 @@ class vmec_data:
         self.shalf = self.s - self.s[1]/2 #half grid
         self.volume = np.array(self.data.variables['volume_p'])
         self.b0 = np.array(self.data.variables['b0'])
-        self.volavgB = np.array(self.data.variables['volavgB']
+        self.volavgB = np.array(self.data.variables['volavgB'])
         self.ns = len(self.psi)
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
