@@ -19,6 +19,7 @@ class boozer:
         self.rmnc = np.array(self.data.variables['rmnc_b'][:])
         self.zmns = np.array(self.data.variables['zmns_b'][:])
         self.pmns = np.array(self.data.variables['pmns_b'][:])
+        self.gmn = np.array(self.data.variables['gmn_b'][:])
         self.xm =  np.array(self.data.variables['ixm_b'][:])
         self.xn =  np.array(self.data.variables['ixn_b'][:])
         self.phi = np.array(self.data.variables['phi_b'][:])
@@ -100,9 +101,9 @@ class boozer:
         mins = 1.0/(self.nr*3)
         maxs = 1.0-mins
         if s < mins:
-            print "warning: s value of ",s," is too low, answer may be incorrect"
+            print("warning: s value of ",s," is too low, answer may be incorrect")
         if s > maxs:
-            print "warning: s value of ",s," is too high, answer may be incorrect"
+            print("warning: s value of ",s," is too high, answer may be incorrect")
 
         return sol.x
                             
@@ -113,25 +114,25 @@ class boozer:
         
         
         #self.dbdpsi = np.empty(self.mnmodes)
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             if fourier=='b':
-                bspl = interp.UnivariateSpline(self.sr, self.bmnc[:,i])
+                bspl = interp.CubicSpline(self.sr, self.bmnc[:,i])
                 self.interpb_at = s
                 self.binterp[i] = bspl(s)
             elif fourier=='r':
-                bspl = interp.UnivariateSpline(self.sr, self.rmnc[:,i])
+                bspl = interp.CubicSpline(self.sr, self.rmnc[:,i])
                 self.interpr_at = s
                 self.rinterp[i] = bspl(s)
             elif fourier=='z':
-                bspl = interp.UnivariateSpline(self.sr, self.zmns[:,i])
+                bspl = interp.CubicSpline(self.sr, self.zmns[:,i])
                 self.interpz_at = s
                 self.zinterp[i] = bspl(s)
             elif fourier=='p':
-                bspl = interp.UnivariateSpline(self.sr, self.pmns[:,i])
+                bspl = interp.CubicSpline(self.sr, self.pmns[:,i])
                 self.interpp_at = s
                 self.pinterp[i] = bspl(s)
             else:
-                print 'wrong value passed to interp_bmn'
+                print('wrong value passed to interp_bmn')
 
 
             
@@ -161,11 +162,11 @@ class boozer:
         return v
 
     def currents_and_derivs(self, s):
-        ipspl = interp.UnivariateSpline(self.s, self.Ip)
+        ipspl = interp.CubicSpline(self.s, self.Ip)
         ip = np.empty(2)
         ip[0] = ipspl(s)
         ip[1] = ipspl.derivatives(s)
-        itspl = interp.UniveraiteSpline(self.s, self.It)
+        itspl = interp.CubicSpline(self.s, self.It)
         it = np.empty(2)
         it[0] = itspl(s)
         it[1] = itspl.derivatives(s)
@@ -176,7 +177,7 @@ class boozer:
         if self.interp_at != s:
             self.interp_bmn(s)
         b = np.zeros(4)
-        for i in xrange(self.mnmodes):
+        for i in range(self.mnmodes):
             #if self.xn[i] > 5 or self.xm[i] > 5:
             #    continue
             angle = self.xm[i]*theta - self.xn[i]*zeta
@@ -194,29 +195,30 @@ class boozer:
         #gamma = self.charge*(
         return b[2]
 
-    def make_modb_contour(self, s, ntheta, nzeta, plot = True):
+    def make_modb_contour(self, s, ntheta, nzeta, plot = True, show = False):
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         b = np.empty([ntheta,nzeta])
-        for i in xrange(nzeta):           
-            for j in xrange(ntheta):
+        for i in range(nzeta):           
+            for j in range(ntheta):
                 b[j,i] = self.field_at_point(s, theta[j], zeta[i])
             #print zeta[i], theta[j], b[j,i]    
                 
         if plot:
-            plt.contour(zeta, theta, b, 60)
-            plt.colorbar()
-            plt.show()
+            plt.contourf(zeta, theta, b, 60, cmap='jet')
+            #plt.colorbar()
+            if show:
+                plt.show()
         return [theta, zeta, b]
 
     def make_dpsidt_contour(self, s, ntheta, nzeta):
         theta = np.linspace(0,2*np.pi,ntheta)
         zeta = np.linspace(0,2*np.pi,nzeta)
         psidot = np.empty([ntheta,nzeta])
-        for i in xrange(nzeta):           
-            for j in xrange(ntheta):
+        for i in range(nzeta):           
+            for j in range(ntheta):
                 psidot[j,i] = self.dpsidt(s,theta[j],zeta[i])
-            print zeta[i], theta[j], psidot[j,i]
+            #print zeta[i], theta[j], psidot[j,i]
         plt.contour(zeta, theta, psidot, 20)
         plt.colorbar()
         plt.show()
@@ -263,7 +265,7 @@ class boozer:
     # rovera is whether to plot wrt r/a or s
     # ignore0 is whether to ignore the B00 mode
     def plot_largest_modes(self, fs=-1, n=10, rovera=True, ignore0=True,
-                           show=True, ax=None, xaxis=None):
+                           show=True, ax=None, xaxis=None, noqa = False):
         # get sorting index for the desired slice
         bslice = self.bmnc[fs,:]
         bslice = -1*abs(bslice)
@@ -285,7 +287,9 @@ class boozer:
         
         #now plot the 10 largest
         if ax is None:
-            for i in xrange(startval,n+startval):
+            for i in range(startval,n+startval):
+                if noqa and self.xn[sortvals[i]] == 0:
+                    continue
                 plt.plot(xaxis, self.bmnc[:,sortvals[i]])
                 legs = ('n=' + str(self.xn[sortvals[i]]) +
                         ', m=' + str(self.xm[sortvals[i]]))
@@ -297,7 +301,7 @@ class boozer:
                 plt.xlabel('$s$')
             plt.ylabel('$B_{mn}$')
         else:
-            for i in xrange(startval,n+startval):
+            for i in range(startval,n+startval):
                 ax.plot(xaxis, self.bmnc[:,sortvals[i]])
                 legs = ('n=' + str(self.xn[sortvals[i]]) +
                         ', m=' + str(self.xm[sortvals[i]]))

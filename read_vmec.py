@@ -54,11 +54,13 @@ class vmec_data:
         self.shalf = self.s - self.s[1]/2 #half grid
         self.volume = np.array(self.data.variables['volume_p'])
         self.b0 = np.array(self.data.variables['b0'])
+        self.volavgB = np.array(self.data.variables['volavgB'])
         self.ns = len(self.psi)
         self.nmn = len(self.xm)
         self.nmnnyq = len(self.xmnyq)
         self.iota = np.array(self.data.variables['iotaf'])
         self.hiota = np.array(self.data.variables['iotas']) #half grid
+        self.jdotb = np.array(self.data.variables['jdotb'])
         self.pres = np.array(self.data.variables['pres'])
         self.betavol = np.array(self.data.variables['beta_vol'])
         self.bvco = np.array(self.data.variables['bvco'])
@@ -103,7 +105,7 @@ class vmec_data:
         Rout = 0.0
         Rin = 0.0
 
-        for i in xrange(len(self.xm)):
+        for i in range(len(self.xm)):
              Rout += self.rmnc[-1,i]
              if self.xm[i] % 2 == 1:
                  Rin -= self.rmnc[-1,i]
@@ -118,7 +120,7 @@ class vmec_data:
        
         r = np.zeros(ntheta+1)
         z = np.zeros(ntheta+1)
-        for i in xrange(len(self.xm)):
+        for i in range(len(self.xm)):
             m = self.xm[i]
             n = self.xn[i]
             angle = m*theta - n*phi
@@ -187,7 +189,7 @@ class vmec_data:
             theta = y
             zeta = z
         else:
-            print "Cannot set both invmec and inrpz, silly"
+            print("Cannot set both invmec and inrpz, silly")
             return
 
         #interp the rz grids
@@ -197,7 +199,7 @@ class vmec_data:
         self.interp_val(s, fourier='b')
 
         if self.iotaspl == None:
-             self.iotaspl = interp.UnivariateSpline(self.s, self.iota)
+             self.iotaspl = interp.CubicSpline(self.s, self.iota)
         iota = self.iotaspl(s)
         phi = np.linspace(zeta, zeta+phimax, npoints)
         thetastar = phi*iota + theta
@@ -211,7 +213,7 @@ class vmec_data:
             lam = sum(self.linterp*np.sin(self.xm*x - self.xn*phi[i]))
             return x + lam - thetastar[i]
 
-        for i in xrange(npoints):
+        for i in range(npoints):
             theta[i] = fsolve(theta_solve, thetastar[i])
             modB[i] = sum(self.binterp*np.cos(self.xmnyq*theta[i] -
                                               self.xnnyq*phi[i]))
@@ -259,9 +261,9 @@ class vmec_data:
         theta = np.linspace(0,2*np.pi,num=ntheta)
         phi = np.linspace(0,2*np.pi/divval, num=nphi)
         
-        for phii in xrange(nphi):
+        for phii in range(nphi):
             p = phi[phii]
-            for ti in xrange(ntheta):
+            for ti in range(ntheta):
                 th = theta[ti]
                 r[phii,ti] = self.r_at_point(s,th,p)
                 z[phii,ti] = self.z_at_point(s,th,p)
@@ -293,24 +295,24 @@ class vmec_data:
 
         elif plot and use_mayavi and mayavi:
             mlab.figure(bgcolor=(1.0, 1.0, 1.0), size=(800,600))
-            mlab.mesh(x,y,z, scalars=b)
+            mlab.contour3d(x,y,z, b)
             if show:
                 mlab.show()
                 
         if outxyz is not None:
             wf = open(outxyz, 'w')
-            for phii in xrange(nphi):
-                for ti in xrange(ntheta):
+            for phii in range(nphi):
+                for ti in range(ntheta):
                     s = (str(x[phii,ti]) + '\t' + str(y[phii,ti]) + '\t'
                          + str(z[phii,ti]) + '\n')
                     wf.write(s)
-        #return [x, y, z, b]
+        return [x, y, z, b]
             
 
     def axis(self, phi):
         r = 0
         z = 0
-        for i in xrange(len(self.raxis)):
+        for i in range(len(self.raxis)):
             r += self.raxis[i]*np.cos(i*self.nfp*phi)
             z += self.zaxis[i]*np.sin(i*self.nfp*phi)
         return r,z
@@ -334,6 +336,15 @@ class vmec_data:
                 plt.show()
         return s,pres
     
+    def current(self, plot=True, show=False):
+        s = self.psi[1:]/self.psi[-1]
+        jdotb = self.jdotb[1:]
+        if plot:
+            plt.plot(s, jdotb)
+            if show:
+                plt.show()
+        return s,jdotb
+
     def r_at_point(self, s, theta, phi):
         self.interp_val(s,fourier='r')
         return sum(self.rinterp*np.cos(self.xm*theta - self.xn*phi))
@@ -370,22 +381,22 @@ class vmec_data:
         #interpolate for bmn and gmn
         bslice = np.empty(self.nmn)
         gslice = np.empty(self.nmn)
-        for mn in xrange(self.nmn):
+        for mn in range(self.nmn):
             bslice[mn] = self.interp_half(self.bmnc, s, mn)
             gslice[mn] = self.interp_half(self.gmnc, s, mn)
 
         vol = 4*np.pi**2 * abs(gslice[0])
-        print vol
+        #print(vol)
         #print gslice
         def bsqfunc(th, ze):
             b = 0
-            for mn in xrange(self.nmn):
+            for mn in range(self.nmn):
                 b += bslice[mn]*np.cos(self.xm[mn]*th - self.xn[mn]*ze)
             return b*b
 
         def gfunc(th, ze):
             g = 0
-            for mn in xrange(self.nmn):
+            for mn in range(self.nmn):
                 g += gslice[mn]*np.cos(self.xm[mn]*th - self.xn[mn]*ze)
             return abs(g)
 
@@ -394,22 +405,22 @@ class vmec_data:
 
         #get flux surface average B**2
         val, err = integrate.dblquad(bsqg, 0, 2*np.pi, lambda x: 0, lambda x: 2*np.pi)
-        print val/vol
+        return val/vol
         #print bslice[0]**2
     
 
     #simple vacuum well, uses B_00 as <B> which isn't quite right
     def well_simp(self, s):
-        b00_spl = interp.UnivariateSpline(self.shalf, self.bmnc[:,0])
-        g00_spl = interp.UnivariateSpline(self.shalf,
+        b00_spl = interp.CubicSpline(self.shalf, self.bmnc[:,0])
+        g00_spl = interp.CubicSpline(self.shalf,
                                                4*np.pi**2 * abs(self.gmnc[:,0]))
         vol_spl = g00_spl.antiderivative()
         db00_spl = b00_spl.derivative()
 
         #print some values
-        print vol_spl(s)
-        print b00_spl(s)
-        print db00_spl(s)
+        print(vol_spl(s))
+        print(b00_spl(s))
+        print(db00_spl(s))
 
         svals = np.linspace(0,1,51)
         plt.plot(svals, b00_spl(svals))
@@ -421,33 +432,33 @@ class vmec_data:
         if fourier=='b':
             if self.interpb_at == s:
                 return
-            for i in xrange(self.nmnnyq):
-                bspl = interp.UnivariateSpline(self.shalf, self.bmnc[:,i])
+            for i in range(self.nmnnyq):
+                bspl = interp.CubicSpline(self.shalf, self.bmnc[:,i])
                 self.interpb_at = s
                 self.binterp[i] = bspl(s)
         elif fourier=='r':
             if self.interpr_at == s:
                 return
-            for i in xrange(self.nmn):
-                bspl = interp.UnivariateSpline(self.s, self.rmnc[:,i])
+            for i in range(self.nmn):
+                bspl = interp.CubicSpline(self.s, self.rmnc[:,i])
                 self.interpr_at = s         
                 self.rinterp[i] = bspl(s)
         elif fourier=='z':
             if self.interpz_at == s:
                 return
-            for i in xrange(self.nmn):
-                bspl = interp.UnivariateSpline(self.s, self.zmns[:,i])
+            for i in range(self.nmn):
+                bspl = interp.CubicSpline(self.s, self.zmns[:,i])
                 self.interpz_at = s
                 self.zinterp[i] = bspl(s)
         elif fourier=='l':
             if self.interpl_at == s:
                 return
-            for i in xrange(self.nmn):
-                bspl = interp.UnivariateSpline(self.s, self.lmns[:,i])
+            for i in range(self.nmn):
+                bspl = interp.CubicSpline(self.s, self.lmns[:,i])
                 self.interpl_at = s
                 self.linterp[i] = bspl(s)
         else:
-                print 'wrong value passed to interp_val'
+                print('wrong value passed to interp_val')
 
         
     #convert vmec to cylindrical 
@@ -511,9 +522,9 @@ class vmec_data:
         mins = 1.0/(self.ns*3)
         maxs = 1.0-mins
         if s < mins:
-            print "warning: s value of ",s," is too low, answer may be incorrect"
+            print("warning: s value of ",s," is too low, answer may be incorrect")
         if s > maxs:
-            print "warning: s value of ",s," is too high, answer may be incorrect"
+            print("warning: s value of ",s," is too high, answer may be incorrect")
 
         return sol.x
 
