@@ -199,7 +199,7 @@ class vmec_data:
         self.interp_val(s, fourier='b')
 
         if self.iotaspl == None:
-             self.iotaspl = interp.UnivariateSpline(self.s, self.iota)
+             self.iotaspl = interp.CubicSpline(self.s, self.iota)
         iota = self.iotaspl(s)
         phi = np.linspace(zeta, zeta+phimax, npoints)
         thetastar = phi*iota + theta
@@ -411,8 +411,8 @@ class vmec_data:
 
     #simple vacuum well, uses B_00 as <B> which isn't quite right
     def well_simp(self, s):
-        b00_spl = interp.UnivariateSpline(self.shalf, self.bmnc[:,0])
-        g00_spl = interp.UnivariateSpline(self.shalf,
+        b00_spl = interp.CubicSpline(self.shalf, self.bmnc[:,0])
+        g00_spl = interp.CubicSpline(self.shalf,
                                                4*np.pi**2 * abs(self.gmnc[:,0]))
         vol_spl = g00_spl.antiderivative()
         db00_spl = b00_spl.derivative()
@@ -433,28 +433,28 @@ class vmec_data:
             if self.interpb_at == s:
                 return
             for i in range(self.nmnnyq):
-                bspl = interp.UnivariateSpline(self.shalf, self.bmnc[:,i])
+                bspl = interp.CubicSpline(self.shalf, self.bmnc[:,i])
                 self.interpb_at = s
                 self.binterp[i] = bspl(s)
         elif fourier=='r':
             if self.interpr_at == s:
                 return
             for i in range(self.nmn):
-                bspl = interp.UnivariateSpline(self.s, self.rmnc[:,i])
+                bspl = interp.CubicSpline(self.s, self.rmnc[:,i])
                 self.interpr_at = s         
                 self.rinterp[i] = bspl(s)
         elif fourier=='z':
             if self.interpz_at == s:
                 return
             for i in range(self.nmn):
-                bspl = interp.UnivariateSpline(self.s, self.zmns[:,i])
+                bspl = interp.CubicSpline(self.s, self.zmns[:,i])
                 self.interpz_at = s
                 self.zinterp[i] = bspl(s)
         elif fourier=='l':
             if self.interpl_at == s:
                 return
             for i in range(self.nmn):
-                bspl = interp.UnivariateSpline(self.s, self.lmns[:,i])
+                bspl = interp.CubicSpline(self.s, self.lmns[:,i])
                 self.interpl_at = s
                 self.linterp[i] = bspl(s)
         else:

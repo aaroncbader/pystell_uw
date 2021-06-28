@@ -116,19 +116,19 @@ class boozer:
         #self.dbdpsi = np.empty(self.mnmodes)
         for i in range(self.mnmodes):
             if fourier=='b':
-                bspl = interp.UnivariateSpline(self.sr, self.bmnc[:,i])
+                bspl = interp.CubicSpline(self.sr, self.bmnc[:,i])
                 self.interpb_at = s
                 self.binterp[i] = bspl(s)
             elif fourier=='r':
-                bspl = interp.UnivariateSpline(self.sr, self.rmnc[:,i])
+                bspl = interp.CubicSpline(self.sr, self.rmnc[:,i])
                 self.interpr_at = s
                 self.rinterp[i] = bspl(s)
             elif fourier=='z':
-                bspl = interp.UnivariateSpline(self.sr, self.zmns[:,i])
+                bspl = interp.CubicSpline(self.sr, self.zmns[:,i])
                 self.interpz_at = s
                 self.zinterp[i] = bspl(s)
             elif fourier=='p':
-                bspl = interp.UnivariateSpline(self.sr, self.pmns[:,i])
+                bspl = interp.CubicSpline(self.sr, self.pmns[:,i])
                 self.interpp_at = s
                 self.pinterp[i] = bspl(s)
             else:
@@ -162,11 +162,11 @@ class boozer:
         return v
 
     def currents_and_derivs(self, s):
-        ipspl = interp.UnivariateSpline(self.s, self.Ip)
+        ipspl = interp.CubicSpline(self.s, self.Ip)
         ip = np.empty(2)
         ip[0] = ipspl(s)
         ip[1] = ipspl.derivatives(s)
-        itspl = interp.UniveraiteSpline(self.s, self.It)
+        itspl = interp.CubicSpline(self.s, self.It)
         it = np.empty(2)
         it[0] = itspl(s)
         it[1] = itspl.derivatives(s)
