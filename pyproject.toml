@@ -1,0 +1,55 @@
+# Build System Configuration
+[build-system]
+requires = ["setuptools>=61", "setuptools_scm[toml]>=6.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Project Metadata
+[project]
+name = "pystell"
+dynamic = ["version"]
+authors = [
+    { name = "Connor Moreno", email = "camoreno@wisc.edu" },
+    { name = "Paul Wilson", email = "paul.wilson@wisc.edu" },
+    { name = "Ahnaf Tahmid Chowdhury", email = "tahmid@nse.mist.ac.bd" }]
+license = { file = "LICENSE" }
+description = "A Python library designed to facilitate the analysis and visualization of data from various plasma physics codes."
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.7"
+dependencies = ["netcdf4", "numpy", "scipy", "matplotlib"]
+
+
+# Optional Dependencies
+[project.optional-dependencies]
+test = ["pytest"]
+docs = ["sphinx"]
+
+# Project URLs
+[project.urls]
+"Bug Tracker" = "https://github.com/aaroncbader/pystell_uw/issues"
+"Source Code" = "https://github.com/aaroncbader/pystell_uw"
+
+# Setuptools Configuration
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Setuptools SCM Configuration
+[tool.setuptools_scm]
