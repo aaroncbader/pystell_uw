@@ -1,18 +1,16 @@
-#Author: Aaron Bader, UW-Madison 2020
-#A class to convert vmec to boozer coordinates
-#Will convert every flux surface except for the core
-#Resolution is passed in the class call along with 
-#a vmec_data object (see read_vmec)
+"""
+Author: Aaron Bader, UW-Madison 2020
+
+This file provides functionality to convert VMEC to boozer coordinates
+Will convert every flux surface except for the core
+"""
 
 from netCDF4 import Dataset
 from netCDF4 import stringtochar
 import numpy as np
-import matplotlib.pyplot as plt
-import imp
-from matplotlib import cm
-import read_vmec
 
-class vmec2booz:
+
+class VMEC2Booz:
     def __init__(self, vmecdata, nboz, mboz):
         self.nboz = int(nboz)
         self.mboz = int(mboz)

@@ -32,57 +32,57 @@ class VMECData:
     plotting and analysis.
 
     Attributes:
-    - data: NetCDF Dataset object containing VMEC data.
-    - rmnc: Array of Fourier coefficients of the Fourier expansion of R.
-    - zmns: Array of Fourier coefficients of the Fourier expansion of Z.
-    - lmns: Array of Fourier coefficients of the Fourier expansion of lambda.
-    - bmnc: Array of Fourier coefficients of the Fourier expansion of B.
-    - gmnc: Array of Fourier coefficients of the Fourier expansion of G.
-    - bsubumnc: Array of Fourier coefficients of the Fourier expansion of bsubu.
-    - bsubvmnc: Array of Fourier coefficients of the Fourier expansion of bsubv.
-    - xm: Array of poloidal mode numbers.
-    - xn: Array of toroidal mode numbers.
-    - xmnyq: Array of poloidal mode numbers for nyquist harmonics.
-    - xnnyq: Array of toroidal mode numbers for nyquist harmonics.
-    - raxis: Array of R values defining the magnetic axis.
-    - zaxis: Array of Z values defining the magnetic axis.
-    - nfp: Number of field periods.
-    - ntor: Number of toroidal modes.
-    - mpol: Poloidal mode number of the axisymmetric component.
-    - mnyq: Maximum poloidal mode number for nyquist harmonics.
-    - nnyq: Maximum toroidal mode number for nyquist harmonics.
-    - a: Minor radius of the flux surface.
-    - psi: Poloidal magnetic flux.
-    - psips: Poloidal magnetic flux evaluated at the surface grid points.
-    - s: Normalized flux coordinate (integer grid).
-    - shalf: Normalized flux coordinate (half grid).
-    - volume: Volume enclosed by each flux surface.
-    - b0: Vacuum toroidal magnetic field on the magnetic axis.
-    - volavgB: Volume average of the magnetic field strength.
-    - ns: Number of grid points in the poloidal direction.
-    - nmn: Number of Fourier coefficients.
-    - nmnnyq: Number of Fourier coefficients for nyquist harmonics.
-    - iota: Rotational transform.
-    - hiota: Rotational transform evaluated at the half grid points.
-    - jdotb: JdotB, where J is the current density and B is the magnetic field.
-    - pres: Plasma pressure.
-    - betavol: Volume-averaged plasma beta.
-    - bvco: Volume-averaged vacuum beta.
-    - buco: Vacuum magnetic energy.
-    - aspect: Aspect ratio of the magnetic geometry.
-    - rmax_surf: Maximum major radius of the surface grid.
-    - rmin_surf: Minimum major radius of the surface grid.
-    - zmax_surf: Maximum vertical position of the surface grid.
-    - betaxis: Plasma beta at the magnetic axis.
-    - interpb_at: Normalized flux coordinate for last interpolation of B coefficients.
-    - binterp: Array of B coefficients after interpolation.
-    - interpr_at: Normalized flux coordinate for last interpolation of R coefficients.
-    - rinterp: Array of R coefficients after interpolation.
-    - interpz_at: Normalized flux coordinate for last interpolation of Z coefficients.
-    - zinterp: Array of Z coefficients after interpolation.
-    - interpl_at: Normalized flux coordinate for last interpolation of lambda coefficients.
-    - linterp: Array of lambda coefficients after interpolation.
-    - iotaspl: Cubic spline interpolation of rotational transform.
+    - data (netCDF4.Dataset): The netCDF4 dataset object containing the VMEC data.
+    - rmnc (np.ndarray): Array of Fourier coefficients of the Fourier expansion of R.
+    - zmns (np.ndarray): Array of Fourier coefficients of the Fourier expansion of Z.
+    - lmns (np.ndarray): Array of Fourier coefficients of the Fourier expansion of lambda.
+    - bmnc (np.ndarray): Array of Fourier coefficients of the Fourier expansion of B.
+    - gmnc (np.ndarray): Array of Fourier coefficients of the Fourier expansion of G.
+    - bsubumnc (np.ndarray): Array of Fourier coefficients of the Fourier expansion of bsubu.
+    - bsubvmnc (np.ndarray): Array of Fourier coefficients of the Fourier expansion of bsubv.
+    - xm (np.ndarray): Array of poloidal mode numbers.
+    - xn (np.ndarray): Array of toroidal mode numbers.
+    - xmnyq (np.ndarray): Array of poloidal mode numbers for nyquist harmonics.
+    - xnnyq (np.ndarray): Array of toroidal mode numbers for nyquist harmonics.
+    - raxis (np.ndarray): Array of R values defining the magnetic axis.
+    - zaxis (np.ndarray): Array of Z values defining the magnetic axis.
+    - nfp (np.ndarray): Number of field periods.
+    - ntor (np.ndarray): Number of toroidal modes.
+    - mpol (np.ndarray): Poloidal mode number of the axisymmetric component.
+    - mnyq (int): Maximum poloidal mode number for nyquist harmonics.
+    - nnyq (int): Maximum toroidal mode number for nyquist harmonics.
+    - a (np.ndarray): Minor radius of the flux surface.
+    - psi (np.ndarray): Poloidal magnetic flux.
+    - psips (np.ndarray): Poloidal magnetic flux evaluated at the surface grid points.
+    - s (np.ndarray): Normalized flux coordinate (integer grid).
+    - shalf (np.ndarray): Normalized flux coordinate (half grid).
+    - volume (np.ndarray): Volume enclosed by each flux surface.
+    - b0 (np.ndarray): Vacuum toroidal magnetic field on the magnetic axis.
+    - volavgB (np.ndarray): Volume average of the magnetic field strength.
+    - ns (int): Number of grid points in the poloidal direction.
+    - nmn (int): Number of Fourier coefficients.
+    - nmnnyq (int): Number of Fourier coefficients for nyquist harmonics.
+    - iota (np.ndarray): Rotational transform.
+    - hiota (np.ndarray): Rotational transform evaluated at the half grid points.
+    - jdotb (np.ndarray): JdotB, where J is the current density and B is the magnetic field.
+    - pres (np.ndarray): Plasma pressure.
+    - betavol (np.ndarray): Volume-averaged plasma beta.
+    - bvco (np.ndarray): Volume-averaged vacuum beta.
+    - buco (np.ndarray): Vacuum magnetic energy.
+    - aspect (np.ndarray): Aspect ratio of the magnetic geometry.
+    - rmax_surf (np.ndarray): Maximum major radius of the surface grid.
+    - rmin_surf (np.ndarray): Minimum major radius of the surface grid.
+    - zmax_surf (np.ndarray): Maximum vertical position of the surface grid.
+    - betaxis (np.ndarray): Plasma beta at the magnetic axis.
+    - interpb_at (int): Normalized flux coordinate for last interpolation of B coefficients.
+    - binterp (np.ndarray): Array of B coefficients after interpolation.
+    - interpr_at (int): Normalized flux coordinate for last interpolation of R coefficients.
+    - rinterp (np.ndarray): Array of R coefficients after interpolation.
+    - interpz_at (int): Normalized flux coordinate for last interpolation of Z coefficients.
+    - zinterp (np.ndarray): Array of Z coefficients after interpolation.
+    - interpl_at (int): Normalized flux coordinate for last interpolation of lambda coefficients.
+    - linterp (np.ndarray): Array of lambda coefficients after interpolation.
+    - iotaspl (CubicSpline): Cubic spline interpolation of rotational transform.
     """
 
     def __init__(self, fname):
