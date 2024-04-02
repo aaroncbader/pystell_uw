@@ -1,10 +1,11 @@
 """
 Author: Aaron Bader, UW-Madison 2018
+Co-author: Ahnaf Tahmid Chowdhury, MIST 2024
 
 This file provides functionality to open and read a boozmn file 
 created by the fortran code xbooz_xform.
 
-It can also plot various quantities of interest
+It can also plot various quantities of interest.
 """
 
 
@@ -50,10 +51,8 @@ class Boozer:
     - charge (float): Electron charge in Coulombs.
     
     Examples:
-    >>> import pystell
-    >>> b = pystell.Boozer('boozmn.nc')
-    >>> b.make_modb_contour(0.5,51,51)
-    >>> b.make_dpsidt_contour(0.5,81,81)
+    >>> from pystell import Boozer
+    >>> b = Boozer('boozmn.nc')
     """
 
     def __init__(self, fname):
@@ -106,6 +105,9 @@ class Boozer:
         - r (float): Radial coordinate.
         - phi (float): Toroidal angle in radians.
         - z (float): Vertical coordinate.
+        
+        Examples:
+        >>> b = Boozer.booz2rpz(0.5, 1.2, 0.8)
         """
         # get the r value
         r = self.field_at_point(s, theta, zeta, fourier="r")
@@ -128,13 +130,15 @@ class Boozer:
         - x (float): Cartesian x-coordinate.
         - y (float): Cartesian y-coordinate.
         - z (float): Cartesian z-coordinate.
+        
+        Examples:
+        >>> b = Boozer.booz2xyz(0.5, 1.2, 0.8)
         """
         r, phi, z = self.booz2rpz(s, theta, zeta)
         x = r * np.cos(phi)
         y = r * np.sin(phi)
         return x, y, z
 
-    # convert x,y,z coordinates to boozer coordinates
     def xyz2booz(self, x, y, z):
         """
         Convert Cartesian coordinates (x, y, z) to Boozer coordinates (s, theta, zeta).
@@ -148,6 +152,9 @@ class Boozer:
         - s (float): Normalized toroidal flux coordinate.
         - theta (float): Poloidal angle in radians.
         - zeta (float): Toroidal angle in radians.
+        
+        Examples:
+        >>> b = Boozer.xyz2booz(0.5, 1.2, 0.8)
         """
         # convert to polar
         # r = np.sqrt(x**2 + y**2)
@@ -206,6 +213,9 @@ class Boozer:
 
         Raises:
         - ValueError: If fourier is not one of "b", "r", "z", or "p".
+        
+        Examples:
+        >>> b.interp_bmn(0.5, "r")
         """
         # self.dbdpsi = np.empty(self.mnmodes)
         for i in range(self.mnmodes):
@@ -241,6 +251,9 @@ class Boozer:
 
         Returns:
         - v (float): Value of the specified Fourier component at the given point.
+        
+        Examples:
+        >>> b.field_at_point(0.5, 0.5, 0.5, "r")
         """
         # make sure we've interpolated at the desired value
         if fourier == "b" and self.interpb_at != s:
@@ -274,6 +287,9 @@ class Boozer:
         Returns:
         - ip (numpy.ndarray): Array containing poloidal current and its derivative at the given point.
         - it (numpy.ndarray): Array containing toroidal current and its derivative at the given point.
+        
+        Examples:
+        >>> b.currents_and_derivs(0.5)
         """
         ipspl = interp.CubicSpline(self.s, self.Ip)
         ip = np.empty(2)
@@ -296,6 +312,9 @@ class Boozer:
 
         Returns:
         - b (numpy.ndarray): Array (modb, dbdpsi, dbdtheta, dbdzeta) containing magnetic field strength and its derivatives at the given point.
+        
+        Examples:
+        >>> b.field_and_derivs(0.5, 0.5, 0.5)
         """
         if self.interp_at != s:
             self.interp_bmn(s)
@@ -321,6 +340,9 @@ class Boozer:
 
         Returns:
         - dpsidt (float): Derivative of toroidal flux with respect to time at the given point.
+        
+        Examples:
+        >>> b.dpsidt(0.5, 0.5, 0.5)
         """
         # simple calculation doesn't need this
         # ip, it = self.currents_and_derivs(s)
@@ -342,6 +364,9 @@ class Boozer:
 
         Returns:
         - data (list): List containing theta values, zeta values, and the magnetic field strength array.
+        
+        Examples:
+        >>> b.make_modb_contour(0.5, 100, 100, plot=True, show=True)
         """
         theta = np.linspace(0, 2 * np.pi, ntheta)
         zeta = np.linspace(0, 2 * np.pi, nzeta)
@@ -366,6 +391,9 @@ class Boozer:
         - s (float): Normalized toroidal flux coordinate.
         - ntheta (int): Number of points to sample for the poloidal angle.
         - nzeta (int): Number of points to sample for the toroidal angle.
+        
+        Examples:
+        >>> b.make_dpsidt_contour(0.5, 81, 51)
         """
         theta = np.linspace(0, 2 * np.pi, ntheta)
         zeta = np.linspace(0, 2 * np.pi, nzeta)
@@ -392,6 +420,9 @@ class Boozer:
 
         Returns:
         - s_guess (float): Guessed normalized toroidal flux coordinate (s).
+        
+        Examples:
+        >>> b.sguess(0.5, 0.5)
         """
         # if axis is not around, get it
         if r0 is None:
@@ -418,7 +449,10 @@ class Boozer:
         - z (float): Vertical coordinate.
 
         Returns:
-        - theta_guess (float): Guessed poloidal angle (theta).
+        - th_guess (float): Guessed poloidal angle (theta).
+        
+        Examples:
+        >>> b.thetaguess(0.5, 0.5)
         """
         r0, phi0, z0 = self.booz2rpz(0, 0, phi)
         r1, phi1, z1 = self.booz2rpz(1, 0, phi)
@@ -434,8 +468,8 @@ class Boozer:
         th_pl = np.arctan2(z_pl, r_pl)
         th_pt = np.arctan2(z_pt, r_pt)
 
-        theta_guess = th_pt - th_pl
-        return theta_guess
+        th_guess = th_pt - th_pl
+        return th_guess
 
     def plot_largest_modes(
         self,
@@ -460,6 +494,9 @@ class Boozer:
         - ax (matplotlib.axes.Axes): Axes object to plot on (default None).
         - xaxis (numpy.ndarray): Array of x-axis values (default None).
         - noqa (bool): Whether to ignore the B00 mode when plotting (default False).
+        
+        Examples:
+        >>> b.plot_largest_modes()
         """
         # get sorting index for the desired slice
         bslice = self.bmnc[fs, :]

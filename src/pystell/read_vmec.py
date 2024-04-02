@@ -1,5 +1,6 @@
 """
 Author: Aaron Bader, UW-Madison 2020
+Co-author: Ahnaf Tahmid Chowdhury, MIST 2024
 
 This file provides functionality to read data from a VMEC wout file and 
 plot various quantities of interest. It offers versatility for plotting, 
@@ -24,6 +25,7 @@ try:
     import vtk
 except ImportError:
     use_mayavi = False
+    logging.warning("Mayavi not found. 3D plots will not work.")
 
 
 class VMECData:
@@ -83,6 +85,10 @@ class VMECData:
     - interpl_at (int): Normalized flux coordinate for last interpolation of lambda coefficients.
     - linterp (np.ndarray): Array of lambda coefficients after interpolation.
     - iotaspl (CubicSpline): Cubic spline interpolation of rotational transform.
+    
+    Examples:
+    >>> from pystell import VMECData
+    >>> v = VMECData('wout_0001.nc')
     """
 
     def __init__(self, fname):
@@ -90,7 +96,7 @@ class VMECData:
         Initialize a VMECData object by reading data from a VMEC wout file.
 
         Args:
-        - fname: String, path to the VMEC wout file.
+        - fname (str): File name of the VMEC wout file.
         """
 
         self.data = Dataset(fname)
@@ -156,11 +162,14 @@ class VMECData:
         Convert a normalized flux value s to a flux surface index.
 
         Args:
-        - s: Float, normalized flux value.
-        - isint: Boolean, indicates whether to round the result to the nearest integer (default True).
+        - s (float): Normalized flux value.
+        - isint (bool): Whether to round the result to the nearest integer (default True).
 
         Returns:
-        - fs: Integer or float, flux surface index.
+        - fs (int or float): Index of the flux surface.
+        
+        Examples:
+        >>> v = VMECData.s2fs(0.5)
         """
 
         fs = s * (self.ns - 1)
@@ -173,10 +182,13 @@ class VMECData:
         Convert a flux surface index (integer or not) into a normalized flux s.
 
         Args:
-        - fs: Integer or float, flux surface index.
+        - fs (int or float): Index of the flux surface.
 
         Returns:
-        - s: Float, normalized flux value.
+        - s (float): Normalized flux value.
+        
+        Examples:
+        >>> v = VMECData.fs2s(0)
         """
 
         s = float(fs) / (self.ns - 1)
@@ -187,7 +199,10 @@ class VMECData:
         Compute the minor radius by evaluating the outboard and inboard R values.
 
         Returns:
-        - Minor radius: Float, the computed minor radius.
+        - Minor radius (float): The computed minor radius.
+        
+        Examples:
+        >>> v = VMECData.bean_radius_horizontal()
         """
 
         Rout = 0.0
@@ -207,15 +222,15 @@ class VMECData:
         Plot a flux surface with flux surface index fs.
 
         Args:
-        - phi: Float, toroidal angle (default 0).
-        - fs: Integer, flux surface index (default -1).
-        - ntheta: Integer, number of points to use for the angular grid (default 50).
-        - plot: Boolean, whether to plot the flux surface (default True).
-        - show: Boolean, whether to display the plot (default False).
+        - phi (float): Toroidal angle (default 0).
+        - fs (int): Flux surface index (default -1).
+        - ntheta (int): Number of points to use for the angular grid (default 50).
+        - plot (bool): Whether to plot the flux surface (default True).
+        - show (bool): Whether to display the plot (default False).
 
         Returns:
-        - r: Float, radial coordinates of the flux surface.
-        - z: Float, vertical coordinates of the flux surface.
+        - r (float): Radial coordinates of the flux surface.
+        - z (float): Vertical coordinates of the flux surface.
         """
         theta = np.linspace(0, 2 * np.pi, num=ntheta + 1)
 
@@ -242,10 +257,13 @@ class VMECData:
         at the half period.  This is the ROSE definition.
 
         Args:
-        - s: Float, normalized flux coordinate (default 1.0).
+        - s (float): Normalized flux coordinate (default 1.0).
 
         Returns:
-        - Mirror term: Float, calculated mirror term.
+        - Mirror term (float): Calculated mirror term.
+        
+        Examples:
+        >>> v = VMECData.mirror(0.5)
         """
 
         B1 = self.modb_at_point(s, 0, 0)
@@ -257,12 +275,15 @@ class VMECData:
         Calculate modb at a point.
 
         Args:
-        - s: Float, normalized flux coordinate.
-        - theta: Float, poloidal angle.
-        - phi: Float, toroidal angle.
+        - s (float): Normalized flux coordinate.
+        - theta (float): Poloidal angle.
+        - phi (float): Toroidal angle.
 
         Returns:
-        - modb: Float, calculated modb at the specified point.
+        - modb (float): Calculated modb at the specified point.
+        
+        Examples:
+        >>> v = VMECData.modb_at_point(0.5, 0.5, 0.5)
         """
 
         self.interp_val(s, fourier="b")
@@ -283,18 +304,21 @@ class VMECData:
         This is mostly deprecated and now calls xyz_on_fieldline.
 
         Args:
-        - fs: Integer, flux surface index.
-        - phimax: Float, maximum toroidal angle (default 4 * np.pi).
-        - npoints: Integer, number of points to compute along the field line (default 1001).
-        - phistart: Float, starting toroidal angle (default 0).
-        - thoffset: Float, toroidal offset angle (default 0).
-        - plot: Boolean, whether to plot the modb (default True).
-        - show: Boolean, whether to display the plot (default False).
+        - fs (int): Flux surface index.
+        - phimax (float): Maximum toroidal angle (default 4 * np.pi).
+        - npoints (int): Number of points to compute along the field line (default 1001).
+        - phistart (float): Starting toroidal angle (default 0).
+        - thoffset (float): Toroidal offset angle (default 0).
+        - plot (Bool): Whether to plot the modb (default True).
+        - show (Bool): Whether to display the plot (default False).
 
         Returns:
-        - phi: Array, toroidal angle array.
-        - modB: Array, modb values along the field line.
-        - theta: Array, poloidal angle array.
+        - phi (numpy.ndarray): Toroidal angle array.
+        - modB (numpy.ndarray): Calculated modb values along the field line.
+        - theta (numpy.ndarray): Poloidal angle array.
+        
+        Examples:
+        >>> phi, modb, theta = v.modb_on_fieldline(0)
         """
 
         s = float(fs) / self.ns
@@ -333,30 +357,34 @@ class VMECData:
         Get x, y, z, and modB on a field line, with options to return r, phi, z instead and some plotting options.
 
         Args:
-        - x: Float, starting coordinate x (or r if inrpz is True).
-        - y: Float, starting coordinate y (or phi if inrpz is True).
-        - z: Float, starting coordinate z (or z if inrpz is True).
-        - phimax: Float, maximum toroidal angle to follow (default 4 * np.pi).
-        - npoints: Integer, number of points to compute along the field line (default 1001).
-        - invmec: Boolean, whether the starting coordinates are in VMEC coordinates (default False).
-        - inrpz: Boolean, whether the starting coordinates are in (r, phi, z) format (default False).
-        - retrpz: Boolean, whether to return (r, phi, z) instead of (x, y, z) (default False).
-        - plot: Boolean, whether to plot the field line (default True).
-        - show: Boolean, whether to display the plot (default False).
-        - onlymodB: Boolean, whether to return only modB values (default False).
+        - x (float): Starting coordinate x (or r if inrpz is True).
+        - y (float): Starting coordinate y (or phi if inrpz is True).
+        - z (float): Starting coordinate z (or z if inrpz is True).
+        - phimax (float): Maximum toroidal angle to follow (default 4 * np.pi).
+        - npoints (int): Number of points to compute along the field line (default 1001).
+        - invmec (bool): Whether the starting coordinates are in VMEC coordinates (default False).
+        - inrpz (bool): Whether the starting coordinates are in (r, phi, z) format (default False).
+        - retrpz (bool): Whether to return (r, phi, z) instead of (x, y, z) (default False).
+        - plot (bool): Whether to plot the field line (default True).
+        - show (bool): Whether to display the plot (default False).
+        - onlymodB (bool): Whether to return only modB values (default False).
 
         Returns:
         If retrpz is False:
-        - xarr: Array, x coordinates along the field line.
-        - yarr: Array, y coordinates along the field line.
-        - zarr: Array, z coordinates along the field line.
-        - modB: Array, modB values along the field line.
+        - xarr (numpy.ndarray): X coordinates along the field line.
+        - yarr (numpy.ndarray): Y coordinates along the field line.
+        - zarr (numpy.ndarray): Z coordinates along the field line.
+        - modB (numpy.ndarray): Values along the field line.
 
         If retrpz is True:
-        - rarr: Array, radial coordinates along the field line.
-        - phi: Array, toroidal angle coordinates along the field line.
-        - zarr: Array, z coordinates along the field line.
-        - modB: Array, modB values along the field line.
+        - rarr (numpy.ndarray): Radial coordinates along the field line.
+        - phi (numpy.ndarray): Toroidal angle coordinates along the field line.
+        - zarr (numpy.ndarray): Z coordinates along the field line.
+        - modB (numpy.ndarray): Values along the field line.
+        
+        Examples:
+        >>> xarr, yarr, zarr, modB = v.xyz_on_fieldline(0, 0, 0)
+        >>> rarr, phi, zarr, modB = v.xyz_on_fieldline(0, 0, 0, retrpz=True)
         """
         
         if not invmec and not inrpz:
@@ -437,19 +465,22 @@ class VMECData:
         Plot modb on a flux surface with the specified parameters.
 
         Args:
-        - s: Float, normalized flux value specifying the flux surface (default 1).
-        - ntheta: Integer, number of points in the theta direction (default 64).
-        - nphi: Integer, number of points in the phi direction (default 64).
-        - plot: Boolean, whether to plot the surface (default True).
-        - show: Boolean, whether to display the plot (default False).
-        - outxyz: String, file path to write the x, y, z coordinates of the surface points (default None).
-        - full: Boolean, whether to plot the full toroidal domain (default False).
-        - alpha: Float, transparency of the surface plot (default 1).
-        - mayavi: Boolean, whether to use Mayavi for plotting (default True).
-        - dpi: Integer, resolution of the plot (default 300).
+        - s (float): Normalized flux value specifying the flux surface (default 1).
+        - ntheta (int): Number of points in the theta direction (default 64).
+        - nphi (int): Number of points in the phi direction (default 64).
+        - plot (bool): Whether to plot the surface (default True).
+        - show (bool): Whether to display the plot (default False).
+        - outxyz (str): File path to write the x, y, z coordinates of the surface points (default None).
+        - full (bool): Whether to plot the full toroidal domain (default False).
+        - alpha (float): Transparency of the surface plot (default 1).
+        - mayavi (bool): Whether to use Mayavi for plotting (default True).
+        - dpi (int): DPI of the resolution of the plot (default 300).
 
         Returns:
-        - List containing arrays of x, y, z, and modB values on the surface.
+        - xyz (list): List containing arrays of x, y, z, and modB values on the surface.
+        
+        Examples:
+        >>> v.modb_on_surface(s=0.5, ntheta=64, nphi=64, plot=True, show=True)
         """
         
         # first attempt will use trisurface, let's see how it looks
@@ -529,11 +560,14 @@ class VMECData:
         Calculate the position of the magnetic axis at the specified toroidal angle.
 
         Args:
-        - phi: Float, toroidal angle.
+        - phi (float): Toroidal angle.
 
         Returns:
-        - r: Float, Radial coordinate of the magnetic axis.
-        - z: Float, Vertical coordinate of the magnetic axis.
+        - r (float): Radial coordinate of the magnetic axis.
+        - z (float): Vertical coordinate of the magnetic axis.
+        
+        Examples:
+        >>> v.axis(0.0)
         """
         
         r = 0
@@ -548,12 +582,15 @@ class VMECData:
         Plot the rotational transform as a function of normalized flux.
 
         Args:
-        - plot: Boolean, whether to plot the data (default True).
-        - show: Boolean, whether to display the plot (default False).
+        - plot (bool): Whether to plot the data (default True).
+        - show (bool): Whether to display the plot (default False).
 
         Returns:
-        - s: Array, normalized flux values.
-        - iota: Array, rotational transform values.
+        - s (np.ndarray): Normalized flux values.
+        - iota (np.ndarray): Rotational transform values.
+        
+        Examples:
+        >>> v.plot_iota()
         """
         
         s = self.psi[1:] / self.psi[-1]
@@ -568,12 +605,15 @@ class VMECData:
         Plot the pressure profile as a function of normalized flux.
 
         Args:
-        - plot: Boolean, whether to plot the data (default True).
-        - show: Boolean, whether to display the plot (default False).
+        - plot(bool): Whether to plot the data (default True).
+        - show (bool): Whether to display the plot (default False).
 
         Returns:
-        - s: Array, normalized flux values.
-        - pres: Array, pressure profile values.
+        - s (np.ndarray): Normalized flux values.
+        - pres (np.ndarray): Pressure profile values.
+        
+        Examples:
+        >>> v.pressure(show=True)
         """
         
         s = self.psi[1:] / self.psi[-1]
@@ -589,12 +629,15 @@ class VMECData:
         Plot the current profile as a function of normalized flux.
 
         Args:
-        - plot: Boolean, whether to plot the data (default True).
-        - show: Boolean, whether to display the plot (default False).
+        - plot (bool): Whether to plot the data (default True).
+        - show (bool): Whether to display the plot (default False).
 
         Returns:
-        - s: Array, normalized flux values.
-        - jdotb: Array, current profile values.
+        - s (np.ndarray): Normalized flux values.
+        - jdotb (np.ndarray): Current profile values.
+        
+        Examples:
+        >>> v.current()
         """
         
         s = self.psi[1:] / self.psi[-1]
@@ -610,12 +653,15 @@ class VMECData:
         Calculate the radial coordinate at a given point on a flux surface.
 
         Args:
-        - s: Normalized flux value.
-        - theta: Poloidal angle.
-        - phi: Toroidal angle.
+        - s (float): Normalized flux value.
+        - theta (float): Poloidal angle.
+        - phi (float): Toroidal angle.
 
         Returns:
-        - Radial coordinate at the specified point.
+        - r (float): Radial coordinate at the specified point.
+        
+        Examples:
+        >>> v.r_at_point(0.0, 0.0, 0.0)
         """
         
         self.interp_val(s, fourier="r")
@@ -626,12 +672,15 @@ class VMECData:
         Calculate the vertical coordinate at a given point on a flux surface.
 
         Args:
-        - s: Float, Normalized flux value.
-        - theta: Float, Poloidal angle.
-        - phi: Float, Toroidal angle.
+        - s (float): Normalized flux value.
+        - theta (float): Poloidal angle.
+        - phi (float): Toroidal angle.
 
         Returns:
-        - Vertical coordinate at the specified point.
+        - z (float): Vertical coordinate at the specified point.
+        
+        Examples:
+        >>> v.z_at_point(0.0, 0.0, 0.0)
         """
         
         self.interp_val(s, fourier="z")
@@ -642,12 +691,15 @@ class VMECData:
         Perform interpolation on the half grid.
 
         Args:
-        - val: Array, values to be interpolated.
-        - s: Float, Normalized flux value.
-        - mn: Integer, Mode number.
+        - val (numpy.ndarray): Array of values to be interpolated.
+        - s (float): Normalized flux value.
+        - mn (int): Mode number.
 
         Returns:
-        - Interpolated value at the specified flux surface and mode number.
+        - v (float): Interpolated value at the specified flux surface and mode number.
+        
+        Examples:
+        >>> v.interp_half(np.array([[1.0, 2.0], [3.0, 4.0]]), 0.5, 0)
         """
         
         if s < self.shalf[1]:
@@ -665,11 +717,14 @@ class VMECData:
         Calculate the volume derivative with respect to normalized flux s.
 
         Args:
-        - s: Float, Normalized flux value.
-        - interpolate: Boolean, flag indicating whether to interpolate the values (default False).
+        - s (float): Normalized flux value.
+        - interpolate (bool): Whether to interpolate the values (default False).
 
         Returns:
-        - dvds: Float, Volume derivative at the specified flux surface.
+        - dvds (float): Volume derivative at the specified flux surface.
+        
+        Examples:
+        >>> v.dvds(0.5)
         """
         
         if not interpolate:
@@ -687,10 +742,13 @@ class VMECData:
         Calculate the well function at a given normalized flux s.
 
         Args:
-        - s: Float, Normalized flux value.
+        - s (float): Normalized flux value.
 
         Returns:
-        - bsq: Float, The average of B^2 over the flux surface.
+        - bsq (float): The average of B^2 over the flux surface.
+        
+        Examples:
+        >>> v.well(0.5)
         """
         # interpolate for bmn and gmn
         bslice = np.empty(self.nmn)
@@ -728,12 +786,15 @@ class VMECData:
         Calculate the well function using simplified interpolation.
 
         Args:
-        - s: Normalized flux value.
-        - plot: Whether to plot the results.
-        - show: Whether to display the plot.
+        - s (float): Normalized flux value.
+        - plot (bool): Whether to plot the results (default True).
+        - show (bool): Whether to display the plot (default False).
 
         Returns:
-        - Tuple of CubicSpline objects: (b00_spl, db00_spl, vol_spl, g00_spl).
+        - CubicSpline objects (list): CubicSpline objects for b00, db00, vol, and g00.
+        
+        Examples:
+        >>> v.well_simp(0.5, plot=True, show=True)
         """
         
         b00_spl = interp.CubicSpline(self.shalf, self.bmnc[:, 0])
@@ -760,18 +821,21 @@ class VMECData:
             plt.tight_layout()
             if show:
                 plt.show()
-        return (b00_spl, db00_spl, vol_spl, g00_spl)
+        return [b00_spl, db00_spl, vol_spl, g00_spl]
 
     def interp_val(self, s, fourier="b"):
         """
         Interpolate values on the given flux surface.
 
         Args:
-        - s: Float, Normalized flux value.
-        - fourier: str, Type of Fourier component to interpolate ("b", "r", "z", or "l") (default: "b").
+        - s (float): Float, Normalized flux value.
+        - fourier (str): Type of Fourier component to interpolate ("b", "r", "z", or "l") (default: "b").
 
         Raises:
         - ValueError: If fourier is not one of "b", "r", "z", or "l".
+        
+        Examples:
+        >>> v.interp_val(0.5, fourier="l")
         """
         if fourier == "b":
             if self.interpb_at == s:
@@ -810,13 +874,16 @@ class VMECData:
         Convert VMEC coordinates to cylindrical coordinates.
 
         Args:
-        - s: Float, Normalized flux value.
-        - theta: Float, Poloidal angle.
-        - zeta: Float, Toroidal angle.
+        - s (float): Normalized flux value.
+        - theta (float): Poloidal angle.
+        - zeta (float): Toroidal angle.
 
         Returns:
-        - r: Float, Radial coordinate.
-        - z: Float, Vertical coordinate.
+        - r (float): Radial coordinate.
+        - z (float): Vertical coordinate.
+        
+        Examples:
+        >>> v.vmec2rpz(0.5, 0.5, 0.5)
         """
         # interpolate the rmnc, and zmns arrays
         if self.interpr_at != s:
@@ -835,14 +902,17 @@ class VMECData:
         Convert VMEC coordinates to Cartesian coordinates.
 
         Args:
-        - s: Float, Normalized flux value.
-        - theta: Float, Poloidal angle.
-        - zeta: Float, Toroidal angle.
+        - s (float): Normalized flux value.
+        - theta (float): Poloidal angle.
+        - zeta (float): Toroidal angle.
 
         Returns:
-        - x: Float, Cartesian x-coordinate.
-        - y: Float, Cartesian y-coordinate.
-        - z: Float, Cartesian z-coordinate.
+        - x (float): Cartesian x-coordinate.
+        - y (float): Cartesian y-coordinate.
+        - z (float): Cartesian z-coordinate.
+        
+        Examples:
+        >>> v.vmec2xyz(0.5, 0.5, 0.5)
         """
         
         r, phi, z = self.vmec2rpz(s, theta, zeta)
@@ -855,12 +925,15 @@ class VMECData:
         Convert Cartesian coordinates to VMEC coordinates.
 
         Args:
-        - x: Float, Cartesian x-coordinate.
-        - y: Float, Cartesian y-coordinate.
-        - z: Float, Cartesian z-coordinate.
+        - x (float): Cartesian x-coordinate.
+        - y (float): Cartesian y-coordinate.
+        - z (float): Cartesian z-coordinate.
 
         Returns:
-        - VMEC coordinates [s, theta, zeta].
+        - VMEC coordinates (list): [s, theta, zeta].
+        
+        Examples:
+        >>> v.xyz2vmec(0.5, 0.5, 0.5)
         """
         
         r = np.sqrt(x**2 + y**2)
@@ -872,12 +945,15 @@ class VMECData:
         Convert cylindrical coordinates to VMEC coordinates.
 
         Args:
-        - r: Float, Radial distance.
-        - phi: Float, Azimuthal angle.
-        - z: Float, Vertical distance.
+        - r (float): Radial distance.
+        - phi (float): Toroidal angle in radians.
+        - z (float): Vertical distance.
 
         Returns:
-        - VMEC coordinates [s, theta, zeta].
+        - VMEC coordinates (list): [s, theta, zeta].
+        
+        Examples:
+        >>> v.rpz2vmec(0.5, 0.5, 0.5)
         """
         vmec_vec = np.empty(3)
         vmec_vec[2] = phi
@@ -926,12 +1002,12 @@ class VMECData:
         Guess the value of theta based on cylindrical coordinates.
 
         Args:
-        - r: Float, Radial distance.
-        - phi: Float, Azimuthal angle.
-        - z: Float, Vertical distance.
+        - r (float): Radial coordinate.
+        - phi (float): Toroidal angle in radians.
+        - z (float): Vertical coordinate.
 
         Returns:
-        - Guessed value of theta.
+        - th_guess (float): Guessed poloidal angle (theta).
         """
         r0, phi0, z0 = self.vmec2rpz(0, 0, phi)
         r1, phi1, z1 = self.vmec2rpz(1, 0, phi)
@@ -946,23 +1022,26 @@ class VMECData:
         # get theta for plasma and our point
         th_pl = np.arctan2(z_pl, r_pl)
         th_pt = np.arctan2(z_pt, r_pt)
-
-        return th_pt - th_pl
+        th_guess = th_pt - th_pl
+        return th_guess
 
     def sguess(self, r, phi, z, theta, r0=None, z0=None):
         """
         Guess the value of s based on cylindrical coordinates.
 
         Args:
-        - r: Float, Radial distance.
-        - phi: Float, Azimuthal angle.
-        - z: Float, Vertical distance.
-        - theta: Float, Poloidal angle.
-        - r0 (optional): Float, Radial distance of the magnetic axis. If None, it will be calculated.
-        - z0 (optional): Float, Vertical distance of the magnetic axis. If None, it will be calculated.
-
+        - r (float): Radial coordinate.
+        - phi (float): Toroidal angle in radians.
+        - z (float): Vertical coordinate.
+        - theta (float): Poloidal angle in radians.
+        - r0 (float): Radial coordinate of a reference point (optional, default is None).
+        - z0 (float): Vertical coordinate of a reference point (optional, default is None).
+        
         Returns:
-        - Guessed value of s.
+        - s_guess (float): Guessed normalized toroidal flux coordinate (s).
+        
+        Examples:
+        >>> v.sguess(0.5, 0.5)
         """
         # if axis is not around, get it
         if r0 is None:
@@ -974,6 +1053,6 @@ class VMECData:
         # squared distances for plasma minor radius and our point at theta
         d_pl = (r1 - r0) ** 2 + (z1 - z0) ** 2
         d_pt = (r - r0) ** 2 + (z - z0) ** 2
-
         # s guess is normalized radius squared
-        return d_pt / d_pl
+        s_guess = d_pt / d_pl
+        return s_guess
