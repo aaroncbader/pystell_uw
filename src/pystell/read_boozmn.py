@@ -199,7 +199,7 @@ class Boozer:
         if s < mins:
             logging.warning("s value of %.4f is too low, answer may be incorrect", s)
         if s > maxs:
-            print("s value of %.4f is too high, answer may be incorrect", s)
+            logging.warning("s value of %.4f is too high, answer may be incorrect", s)
 
         return sol.x
 
