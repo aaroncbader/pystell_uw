@@ -8,8 +8,7 @@ build-backend = "setuptools.build_meta"
 name = "pystell"
 dynamic = ["version"]
 authors = [
-    { name = "Connor Moreno", email = "camoreno@wisc.edu" },
-    { name = "Paul Wilson", email = "paul.wilson@wisc.edu" },
+    { name = "Aaron Bader", email = "aaron.bader@typeoneenergy.com" },
     { name = "Ahnaf Tahmid Chowdhury", email = "tahmid@nse.mist.ac.bd" }]
 license = { file = "LICENSE" }
 description = "A Python library designed to facilitate the analysis and visualization of data from various plasma physics codes."
