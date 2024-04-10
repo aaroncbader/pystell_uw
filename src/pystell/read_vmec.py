@@ -895,7 +895,7 @@ class VMECData:
         r = sum(self.rinterp * np.cos(angle))
         z = sum(self.zinterp * np.sin(angle))
 
-        return r, z
+        return r, zeta, z
 
     def vmec2xyz(self, s, theta, zeta):
         """
