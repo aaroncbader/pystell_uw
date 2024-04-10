@@ -880,6 +880,7 @@ class VMECData:
 
         Returns:
         - r (float): Radial coordinate.
+        - zeta (float): Toroidal angle.
         - z (float): Vertical coordinate.
         
         Examples:
