@@ -256,10 +256,9 @@ class VMEC2Booz:
                 gpsi, Ipsi, jrad, lt, lz, lam, wt, wz, wp
             )
             if jrad == 9:
-                print("p1: ", p1[:10])
-                print("q1: ", q1[:10])
-                print("xjac: ", xjac[:10])
-                
+                logging.info("p1: %s", p1[:10])
+                logging.info("q1: %s", q1[:10])
+                logging.info("xjac: %s", xjac[:10])
 
             r12 = np.empty(self.nunv)
             z12 = np.empty(self.nunv)
@@ -281,11 +280,11 @@ class VMEC2Booz:
             self.sinnn[:] = 0.0
 
             if jrad == 2:
-                print("bmncb: ", self.bmncb[:10, jrad])
-                print("rmncb: ", self.rmncb[:10, jrad])
-                print("zmnsb: ", self.zmnsb[:10, jrad])
-                print("pmnsb: ", self.pmnsb[:10, jrad])
-                print("gmncb: ", self.gmncb[:10, jrad])
+                logging.info("bmncb: %s", self.bmncb[:10, jrad])
+                logging.info("rmncb: %s", self.rmncb[:10, jrad])
+                logging.info("zmnsb: %s", self.zmnsb[:10, jrad])
+                logging.info("pmnsb: %s", self.pmnsb[:10, jrad])
+                logging.info("gmncb: %s", self.gmncb[:10, jrad])
 
             # We store angles corresponding to 0 and pi, have to subtract 1
             # due to the python/fortran index difference
@@ -329,7 +328,7 @@ class VMEC2Booz:
                 n1 = 0
             for n in range(n1, n2 + 1):
                 if mnboz0 >= self.mnboz:
-                    print("problem: mnboz0 > mnboz")
+                    logging.error("problem: mnboz0 > mnboz")
                     return
                 self.xnb[mnboz0] = n * self.nfp
                 self.xmb[mnboz0] = m
@@ -441,7 +440,7 @@ class VMEC2Booz:
         js = jrad
         js1 = js - 1
         if js <= 0:
-            print("Something wrong js <= 0")
+            logging.error("Something wrong js <= 0")
             return
         r = 0.0
         z = 0.0
@@ -666,7 +665,7 @@ class VMEC2Booz:
         i = nv * (nu2 - 1)
         imax = i + nv
         if jrad == 9:
-            print("i,max,", i, imax)
+            logging.info("i = %d, imax = %d", i, imax)
         for m in range(self.mboz + 1):
             self.cosmm[:nv, m] = 0.5 * self.cosmm[:nv, m]
             self.cosmm[i:imax, m] = 0.5 * self.cosmm[i:imax, m]
